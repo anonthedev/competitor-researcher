@@ -5,7 +5,6 @@ from openai import OpenAI
 from composio_crewai import ComposioToolset, App, ComposioSDK
 from crewai import Agent, Task
 from uuid import uuid4
-# from langchain import hub
 from langchain_openai import ChatOpenAI
 import logging
 from flask import Flask, request, jsonify
