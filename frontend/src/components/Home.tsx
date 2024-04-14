@@ -24,7 +24,7 @@ export default function Home() {
       },
     };
 
-    fetch(`http://127.0.0.1:5000/scrape_website`, options)
+    fetch(`https://competitor-researcher-production.up.railway.app/scrape_website`, options)
       .then((data) => data.json())
       .then((resp) => {
         console.log(resp);
