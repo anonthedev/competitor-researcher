@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 from composio_crewai import ComposioToolset, App, ComposioSDK
 from crewai import Agent, Task
-from uuid import uuid4
+# from uuid import uuid4
 from langchain_openai import ChatOpenAI
 import logging
 from flask import Flask, request, jsonify
@@ -171,4 +171,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-application = app
+# application = app
