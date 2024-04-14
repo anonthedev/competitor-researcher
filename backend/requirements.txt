@@ -4,5 +4,5 @@ flask
 openai
 beautifulsoup4
 langchain_openai
-# logging
+gunicorn
 flask_cors
