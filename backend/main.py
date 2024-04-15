@@ -11,7 +11,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"*": {"origins": "*"}})
 # app.config['CORS_HEADERS'] = 'Content-Type'
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -107,7 +107,7 @@ def get_info(cleaned_html: str) -> str:
     return response.choices[0].message.content
 
 @app.route('/scrape_website', methods=['POST'])
-# @cross_origin()
+@cross_origin()
 def scrape_website():
     """
     Scrape a website and its subpages for text content.
@@ -166,9 +166,7 @@ def create_notion_page():
 # authenticate()
 
 def main():
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True)
 
 if __name__ == "__main__":
     main()
-
-# application = app
