@@ -11,8 +11,7 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-CORS(app, resources={r"*": {"origins": "*"}})
-# app.config['CORS_HEADERS'] = 'Content-Type'
+CORS(app)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -142,14 +141,14 @@ def scrape_website():
 
     cleaned_content = '\n'.join(content)
     competitor_info = get_info(cleaned_content)
-    response = make_response(jsonify(competitor_info))
+    return jsonify(competitor_info)
     
-    # Set CORS headers
-    response.headers['Access-Control-Allow-Origin'] = '*'  # Allow requests from any origin
-    response.headers['Access-Control-Allow-Methods'] = 'POST'  # Allow POST requests
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'  # Allow the Content-Type header
+    # # Set CORS headers
+    # response.headers['Access-Control-Allow-Origin'] = '*'  # Allow requests from any origin
+    # response.headers['Access-Control-Allow-Methods'] = 'POST'  # Allow POST requests
+    # response.headers['Access-Control-Allow-Headers'] = 'Content-Type'  # Allow the Content-Type header
     
-    return response
+    # return response
 
 @app.route('/create_notion_page', methods=['POST'])
 def create_notion_page():
