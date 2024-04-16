@@ -1,5 +1,6 @@
 "use client";
 
+import { PROD_BASE_URL, LOCAL_BASE_URL } from "@/components/utils";
 import { createContext, useEffect, useState } from "react";
 
 export const GlobalContext = createContext<any>(null);
@@ -11,7 +12,7 @@ export default function ContextProvider({ children }: { children: any }) {
         setAuthenticated(false)
     } else {
         let entity_id = localStorage.getItem("entity_id")
-        fetch(`http://127.0.0.1:5000/confirm_auth?entity_id=${entity_id}`)
+        fetch(`${PROD_BASE_URL}/confirm_auth?entity_id=${entity_id}`)
         .then((data)=>data.json())
         .then((resp)=>{
             setAuthenticated(resp.auth_confirmation)
