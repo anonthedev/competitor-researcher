@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import Toast from "./Toast";
 import Link from "next/link";
 import { GlobalContext } from "@/app/contextProvider";
+import { PROD_BASE_URL } from "./utils";
 
 export default function Authenticate() {
   const [authURL, setAuthURL] = useState("");
@@ -23,7 +24,7 @@ export default function Authenticate() {
     if (!authURL) {
       const interval = setInterval(() => {
         fetch(
-          `http://127.0.0.1:5000/confirm_auth?entity_id=${entity_id?.toString()}`
+          `${PROD_BASE_URL}/confirm_auth?entity_id=${entity_id?.toString()}`
         )
           .then((data) => data.json())
           .then((resp: any) => {
@@ -56,7 +57,7 @@ export default function Authenticate() {
     let entity_id = localStorage.getItem("entity_id");
     console.log(context);
     fetch(
-      `http://127.0.0.1:5000/authenticate?entity_id=${entity_id?.toString()}`
+      `${PROD_BASE_URL}/authenticate?entity_id=${entity_id?.toString()}`
     )
       .then((data) => data.json())
       .then((resp) => {

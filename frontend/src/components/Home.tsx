@@ -4,6 +4,7 @@ import { GlobalContext } from "@/app/contextProvider";
 import Toast from "./Toast";
 import SignIn from "./SignIn";
 import SignOut from "./SignOut";
+import { PROD_BASE_URL, LOCAL_BASE_URL } from "./utils";
 
 export default function Home() {
   const [url, setURL] = useState("");
@@ -24,10 +25,10 @@ export default function Home() {
       },
     };
 
-    fetch(`https://competitor-researcher-production.up.railway.app/scrape_website`, options)
+    fetch(`${PROD_BASE_URL}/scrape_website`, options)
       .then((data) => data.json())
       .then((resp) => {
-        console.log(resp);
+        // console.log(resp);
         setCompetitorData(resp);
         setLoading(false);
       })
@@ -40,7 +41,7 @@ export default function Home() {
   function addToNotion() {
     setAddingPage(true)
     if (context.authenticated) {
-      fetch(`http://127.0.0.1:5000/create_notion_page`, {
+      fetch(`${PROD_BASE_URL}/create_notion_page`, {
         method: "POST",
         body: JSON.stringify({ competitor_info: comeptitorData }),
         headers: { "Content-Type": "application/json" },

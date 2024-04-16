@@ -138,7 +138,9 @@ def scrape_website():
             except requests.exceptions.RequestException as e:
                 logging.warning(f"Error scraping {single_link}: {e}")
 
+    # print(content)
     cleaned_content = '\n'.join(content)
+    # print(cleaned_content)
     competitor_info = get_info(cleaned_content)
     return jsonify(competitor_info)
     
