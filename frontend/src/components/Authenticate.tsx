@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import Toast from "./Toast";
 import Link from "next/link";
 import { GlobalContext } from "@/app/contextProvider";
-import { PROD_BASE_URL } from "./utils";
+import { PROD_BASE_URL, LOCAL_BASE_URL } from "./utils";
 
 export default function Authenticate() {
   const [authURL, setAuthURL] = useState("");
@@ -28,7 +28,7 @@ export default function Authenticate() {
         )
           .then((data) => data.json())
           .then((resp: any) => {
-            console.log(resp);
+            // console.log(resp);
             context.setAuthenticated(resp.auth_confirmation);
             if (resp) {
             }

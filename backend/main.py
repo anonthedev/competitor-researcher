@@ -38,7 +38,7 @@ agent = Agent(
 def authenticate():
     # entity_id = uuid4()
     entity_id = request.args.get('entity_id')
-    # print(entity_id)
+    print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
     if entity.is_app_authenticated(App.NOTION) == False:
         resp = entity.initiate_connection(App.NOTION)
@@ -58,6 +58,7 @@ def authenticate():
 @app.route("/confirm_auth", methods=["GET"])
 def confirm_auth():
     entity_id = request.args.get('entity_id')
+    print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
     confirm = entity.is_app_authenticated(App.NOTION)
     print(confirm)
