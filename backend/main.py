@@ -106,7 +106,7 @@ def get_info(cleaned_html: str) -> str:
     return response.choices[0].message.content
 
 @app.route('/scrape_website', methods=['POST'])
-@cross_origin()
+# @cross_origin()
 def scrape_website():
     """
     Scrape a website and its subpages for text content.
