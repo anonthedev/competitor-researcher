@@ -6,3 +6,4 @@ beautifulsoup4
 langchain_openai
 gunicorn
 flask_cors
+gevent
