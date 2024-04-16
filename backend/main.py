@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 from composio_crewai import ComposioToolset, App, ComposioSDK
 from crewai import Agent, Task
-# from uuid import uuid4
 from langchain_openai import ChatOpenAI
 import logging
 from flask import Flask, request, jsonify, make_response
@@ -106,7 +105,7 @@ def get_info(cleaned_html: str) -> str:
     return response.choices[0].message.content
 
 @app.route('/scrape_website', methods=['POST'])
-# @cross_origin()
+@cross_origin(origins='*')
 def scrape_website():
     """
     Scrape a website and its subpages for text content.
