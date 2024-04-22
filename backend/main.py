@@ -29,6 +29,7 @@ composio_crewai = ComposioToolset([App.NOTION])
 logging.info(f"Composio ToolSet loaded: {composio_crewai}")
 
 def st_callback(step_output):
+    # print(step_output)
     action_log = ""
     observation_log = ""
     for step in step_output:
@@ -38,12 +39,12 @@ def st_callback(step_output):
             action, observation = step
             if isinstance(action, dict) and "tool" in action and "tool_input" in action and "log" in action:
                 print(f"# Action")
-                print(f"**Tool:** {action['tool']}")
-                print(f"**Tool Input** {action['tool_input']}")
-                print(f"**Log:** {action['log']}")
-                print(f"**Action:** {action['Action']}")
-                print(
-                    f"**Action Input:** ```json\n{action['tool_input']}\n```")
+                # print(f"**Tool:** {action['tool']}")
+                # print(f"**Tool Input** {action['tool_input']}")
+                # print(f"**Log:** {action['log']}")
+                # print(f"**Action:** {action['Action']}")
+                # print(
+                #     f"**Action Input:** ```json\n{action['tool_input']}\n```")
             elif isinstance(action, str):
                 # action_str = str(action)
                 thought_match = re.search(r'Thought: (.*)', action)
@@ -54,7 +55,7 @@ def st_callback(step_output):
                 only_action_input = action_input_match.group(1).split('\n')[0] if action_input_match else ""
                 all_string = f"Thought: {only_thought} \n\n Action: {only_action} \n\n Action Input: {only_action_input}"
                 action_log = all_string
-                print(all_string)
+                # print(all_string)
                 # print(f"**Action:** {action}")
             else:
                 # print(type(action))
@@ -67,7 +68,7 @@ def st_callback(step_output):
                 only_action_input = action_input_match.group(1).split('\n')[0] if action_input_match else ""
                 all_string = f"Thought: {only_thought} \n\n Action: {only_action} \n\n Action Input: {only_action_input}"
                 action_log = all_string
-                print(all_string)
+                # print(all_string)
                 # print(f"**Action** {str(action)}")
 
             print(f"**Observation**")
@@ -87,10 +88,12 @@ def st_callback(step_output):
                         print(line)
             else:
                 observation_log = str(observation)
-                print(str(observation))
+                # print(str(observation))
         else:
             print(step)
+        print(f"Action:\n {action_log} \n\n Observation: \n {observation_log}")
         yield f"Action:\n {action_log} \n\n Observation: \n {observation_log}"
+
 # Initialize Agent
 agent = Agent(
     role="Notion Agent",
@@ -115,10 +118,11 @@ def stream_logs():
         agent=agent,
         
     )
+    # task.execute()
     def generate_log_stream():
         for step_output in task.execute():
-            for log_event in st_callback(step_output):
-                yield log_event
+            logs = st_callback(step_output)
+            yield logs
     return Response(generate_log_stream(), mimetype="text/event-stream")
 
 @app.route("/authenticate", methods=["GET"])
@@ -240,7 +244,7 @@ def scrape_website():
     
     # return response
 
-@app.route('/create_notion_page', methods=['GET'])
+@app.route('/create_notion_page', methods=['POST'])
 def create_notion_page():
     """
     Create a Notion page with information about a competitor.
@@ -249,19 +253,22 @@ def create_notion_page():
         competitor_info (str): The information about the competitor to be added to the Notion page.
         agent (Agent): The Crew AI agent instance with Notion access.
     """
-    global competitor_info
+    # global competitor_info
+    competitor_info = request.json.get('competitor_info')
     task = Task(
         description=f"Create a page by the name of the competitor if the name already exists just add something else as prefix or suffix. Create this page in the page 'Competition research' and put the pointer regarding the competitor in that page which you will create. Put the pointers as they are DO NOT change them. \n Pointers to be put in the page - {competitor_info}",
         expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
         agent=agent,
     )
-    def generate_log_stream():
-        for step_output in task.execute():
-            for log_event in st_callback(step_output):
-                yield log_event
+    task.execute()
+    # def generate_log_stream():
+    #     for step_output in task.execute():
+    #         for log_event in st_callback(step_output):
+    #             yield log_event
 
     logging.info("Notion page created.")
-    return Response(generate_log_stream(), mimetype="text/event-stream")
+    return jsonify({"message": "success"})
+    # return Response(generate_log_stream(), mimetype="text/event-stream")
 
 # authenticate()
 

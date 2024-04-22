@@ -59,7 +59,7 @@ export default function Home() {
   function addToNotion() {
     setAddingPage(true);
     if (context.authenticated) {
-      const eventSource = new EventSource(`${BASE_URL}/create_notion_page`);
+      const eventSource = new EventSource(`${BASE_URL}/logs`);
       eventSource.onmessage = function (event) {
         console.log(event)
         const logData = event.data.replace("data: ", "");
@@ -117,10 +117,9 @@ export default function Home() {
           </button>
           <button
             onClick={addToNotion}
-            disabled={comeptitorData === "" || addingPage ? true : false}
-            className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 ${
-              comeptitorData === "" || addingPage ? "opacity-50" : "opacity-100"
-            }`}
+            // disabled={comeptitorData === "" || addingPage ? true : false}
+            className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 `
+          }
           >
             {addingPage ? "adding..." : "Add to Notion"}
           </button>
