@@ -1,4 +1,6 @@
 import os
+import re
+import time
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
@@ -6,11 +8,13 @@ from composio_crewai import ComposioToolset, App, ComposioSDK
 from crewai import Agent, Task
 from langchain_openai import ChatOpenAI
 import logging
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 CORS(app)
+
+competitor_info = ""
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -24,6 +28,69 @@ llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model="gpt-4-turbo")
 composio_crewai = ComposioToolset([App.NOTION])
 logging.info(f"Composio ToolSet loaded: {composio_crewai}")
 
+def st_callback(step_output):
+    action_log = ""
+    observation_log = ""
+    for step in step_output:
+        # print(step)
+        # print(type(step))
+        if isinstance(step, tuple) and len(step) == 2:
+            action, observation = step
+            if isinstance(action, dict) and "tool" in action and "tool_input" in action and "log" in action:
+                print(f"# Action")
+                print(f"**Tool:** {action['tool']}")
+                print(f"**Tool Input** {action['tool_input']}")
+                print(f"**Log:** {action['log']}")
+                print(f"**Action:** {action['Action']}")
+                print(
+                    f"**Action Input:** ```json\n{action['tool_input']}\n```")
+            elif isinstance(action, str):
+                # action_str = str(action)
+                thought_match = re.search(r'Thought: (.*)', action)
+                action_match = re.search(r'Action: (.*)', action)
+                action_input_match = re.search(r'Action Input: (.*)', action)
+                only_thought =  thought_match.group(1).split('\n')[0] if thought_match else ""
+                only_action = action_match.group(1).split('\n')[0] if action_match else ""
+                only_action_input = action_input_match.group(1).split('\n')[0] if action_input_match else ""
+                all_string = f"Thought: {only_thought} \n\n Action: {only_action} \n\n Action Input: {only_action_input}"
+                action_log = all_string
+                print(all_string)
+                # print(f"**Action:** {action}")
+            else:
+                # print(type(action))
+                action_str = str(action)
+                thought_match = re.search(r'Thought: (.*)', action_str)
+                action_match = re.search(r'Action: (.*)', action_str)
+                action_input_match = re.search(r'Action Input: (.*)', action_str)
+                only_thought =  thought_match.group(1).split('\n')[0] if thought_match else ""
+                only_action = action_match.group(1).split('\n')[0] if action_match else ""
+                only_action_input = action_input_match.group(1).split('\n')[0] if action_input_match else ""
+                all_string = f"Thought: {only_thought} \n\n Action: {only_action} \n\n Action Input: {only_action_input}"
+                action_log = all_string
+                print(all_string)
+                # print(f"**Action** {str(action)}")
+
+            print(f"**Observation**")
+            if isinstance(observation, str):
+                observation_lines = observation.split('\n')
+                observation_log = observation
+                for line in observation_lines:
+                    if line.startswith('Title: '):
+                        print(f"**Title:** {line[7:]}")
+                    elif line.startswith('Link: '):
+                        print(f"**Link:** {line[6:]}")
+                    elif line.startswith('Snippet: '):
+                        print(f"**Snippet:** {line[9:]}")
+                    elif line.startswith('-'):
+                        print(line)
+                    else:
+                        print(line)
+            else:
+                observation_log = str(observation)
+                print(str(observation))
+        else:
+            print(step)
+        yield f"Action:\n {action_log} \n\n Observation: \n {observation_log}"
 # Initialize Agent
 agent = Agent(
     role="Notion Agent",
@@ -32,7 +99,27 @@ agent = Agent(
     verbose=True,
     tools=composio_crewai,
     llm=llm,
+    step_callback=st_callback
 )
+
+# SSE test route
+@app.route("/logs", methods=["GET"])
+def stream_logs():
+    # def event_stream():
+    #     while True:
+    #         time.sleep(1)
+    #         yield f'data: something something\n\n'
+    task = Task(
+        description=f"just create a page in competitor research page with the name 'xyz'",
+        expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
+        agent=agent,
+        
+    )
+    def generate_log_stream():
+        for step_output in task.execute():
+            for log_event in st_callback(step_output):
+                yield log_event
+    return Response(generate_log_stream(), mimetype="text/event-stream")
 
 @app.route("/authenticate", methods=["GET"])
 def authenticate():
@@ -123,25 +210,26 @@ def scrape_website():
     soup = BeautifulSoup(reqs.content, 'html.parser')
     content.append(remove_tags(reqs.content))
 
-    urls = set()
-    for link in soup.find_all('a'):
-        fetch_link = f"{url}{link.get('href')}" if chr(ord(link.get('href')[0])) == '/' else link.get('href')
-        if "./" in fetch_link:
-            fetch_link = fetch_link.replace("./", "/")
-            fetch_link = f"{url}{fetch_link}"
-        urls.add(fetch_link)
+    # urls = set()
+    # for link in soup.find_all('a'):
+    #     fetch_link = f"{url}{link.get('href')}" if chr(ord(link.get('href')[0])) == '/' else link.get('href')
+    #     if "./" in fetch_link:
+    #         fetch_link = fetch_link.replace("./", "/")
+    #         fetch_link = f"{url}{fetch_link}"
+    #     urls.add(fetch_link)
 
-    for single_link in urls:
-        if "mailto" not in single_link and single_link.count('/') <= 3 and "x.com" not in single_link and "twitter.com" not in single_link:
-            try:
-                r = requests.get(single_link)
-                content.append(remove_tags(r.content))
-            except requests.exceptions.RequestException as e:
-                logging.warning(f"Error scraping {single_link}: {e}")
+    # for single_link in urls:
+    #     if "mailto" not in single_link and single_link.count('/') <= 3 and "x.com" not in single_link and "twitter.com" not in single_link:
+    #         try:
+    #             r = requests.get(single_link)
+    #             content.append(remove_tags(r.content))
+    #         except requests.exceptions.RequestException as e:
+    #             logging.warning(f"Error scraping {single_link}: {e}")
 
     # print(content)
     cleaned_content = '\n'.join(content)
     # print(cleaned_content)
+    global competitor_info
     competitor_info = get_info(cleaned_content)
     return jsonify(competitor_info)
     
@@ -152,7 +240,7 @@ def scrape_website():
     
     # return response
 
-@app.route('/create_notion_page', methods=['POST'])
+@app.route('/create_notion_page', methods=['GET'])
 def create_notion_page():
     """
     Create a Notion page with information about a competitor.
@@ -161,15 +249,19 @@ def create_notion_page():
         competitor_info (str): The information about the competitor to be added to the Notion page.
         agent (Agent): The Crew AI agent instance with Notion access.
     """
-    competitor_info = request.json.get('competitor_info')
+    global competitor_info
     task = Task(
         description=f"Create a page by the name of the competitor if the name already exists just add something else as prefix or suffix. Create this page in the page 'Competition research' and put the pointer regarding the competitor in that page which you will create. Put the pointers as they are DO NOT change them. \n Pointers to be put in the page - {competitor_info}",
         expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
         agent=agent,
     )
-    task.execute()
+    def generate_log_stream():
+        for step_output in task.execute():
+            for log_event in st_callback(step_output):
+                yield log_event
+
     logging.info("Notion page created.")
-    return jsonify({"message": "success"})
+    return Response(generate_log_stream(), mimetype="text/event-stream")
 
 # authenticate()
 

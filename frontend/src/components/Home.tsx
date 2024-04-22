@@ -1,10 +1,10 @@
 "use client";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { GlobalContext } from "@/app/contextProvider";
 import Toast from "./Toast";
 import SignIn from "./SignIn";
 import SignOut from "./SignOut";
-import { PROD_BASE_URL, LOCAL_BASE_URL } from "./utils";
+import { BASE_URL } from "./utils";
 
 export default function Home() {
   const [url, setURL] = useState("");
@@ -12,20 +12,38 @@ export default function Home() {
   const [comeptitorData, setCompetitorData] = useState("");
   const [notionPageCreated, setNotionPageCreated] = useState(false);
   const [showNoAuthToast, setShowNoAuthToast] = useState(false);
-  const [addingPage, setAddingPage] = useState(false)
+  const [addingPage, setAddingPage] = useState(false);
   const context = useContext(GlobalContext);
+
+  const [logs, setLogs] = useState<any[]>([]);
+
+  // useEffect(()=>{
+  //   const eventSource = new EventSource(`${BASE_URL}/logs`);
+  //   eventSource.onmessage = function(event) {
+  //     console.log(event)
+  //     const logData = event.data.replace('data: ', '');
+  //     console.log(logData);
+  //     setLogs(prevLogs => [...prevLogs, logData]);
+  //   };
+
+  //   return () => {
+  //       eventSource.close();
+  //   };
+  // }, [])
 
   function getScrapedData() {
     setLoading(true);
     let options = {
       method: "POST",
-      body: JSON.stringify({ url: url.includes("https://") ? url : `https://${url}`}),
+      body: JSON.stringify({
+        url: url.includes("https://") ? url : `https://${url}`,
+      }),
       headers: {
         "Content-Type": "application/json",
       },
     };
 
-    fetch(`${PROD_BASE_URL}/scrape_website`, options)
+    fetch(`${BASE_URL}/scrape_website`, options)
       .then((data) => data.json())
       .then((resp) => {
         // console.log(resp);
@@ -39,25 +57,39 @@ export default function Home() {
   }
 
   function addToNotion() {
-    setAddingPage(true)
+    setAddingPage(true);
     if (context.authenticated) {
-      fetch(`${PROD_BASE_URL}/create_notion_page`, {
-        method: "POST",
-        body: JSON.stringify({ competitor_info: comeptitorData }),
-        headers: { "Content-Type": "application/json" },
-      })
-        .then((data) => data.json())
-        .then((resp) => {
-          if (resp.message === "success") {
-            setNotionPageCreated(true);
-            setAddingPage(false)
-          }
-        });
+      const eventSource = new EventSource(`${BASE_URL}/create_notion_page`);
+      eventSource.onmessage = function (event) {
+        console.log(event)
+        const logData = event.data.replace("data: ", "");
+        console.log(logData);
+        setLogs((prevLogs) => [...prevLogs, logData]);
+      };
+      eventSource.onerror = (event) => {
+        console.error('EventSource failed', event);
+      };  
+      // fetch(`${BASE_URL}/create_notion_page`, {
+      //   method: "POST",
+      //   body: JSON.stringify({ competitor_info: comeptitorData }),
+      //   headers: { "Content-Type": "application/json" },
+      // })
+      //   .then((data) => data.json())
+      //   .then((resp) => {
+      //     if (resp.message === "success") {
+      //       setNotionPageCreated(true);
+      //       setAddingPage(false);
+      //     } else {
+      //       setAddingPage(false);
+      //     }
+      //   });
     } else {
       setShowNoAuthToast(true);
-      setAddingPage(false)
+      setAddingPage(false);
     }
   }
+
+  // console.log(logs)
 
   return (
     <main className="min-h-screen w-screen flex flex-col gap-6 items-center pt-[40vh] pb-5">
