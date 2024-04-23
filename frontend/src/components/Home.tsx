@@ -13,23 +13,38 @@ export default function Home() {
   const [notionPageCreated, setNotionPageCreated] = useState(false);
   const [showNoAuthToast, setShowNoAuthToast] = useState(false);
   const [addingPage, setAddingPage] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   const context = useContext(GlobalContext);
 
   const [logs, setLogs] = useState<any[]>([]);
 
-  // useEffect(()=>{
-  //   const eventSource = new EventSource(`${BASE_URL}/logs`);
-  //   eventSource.onmessage = function(event) {
-  //     console.log(event)
-  //     const logData = event.data.replace('data: ', '');
-  //     console.log(logData);
-  //     setLogs(prevLogs => [...prevLogs, logData]);
-  //   };
+  // const formatText = (text) => {
+  //   const lines = text.split("\n");
 
-  //   return () => {
-  //       eventSource.close();
-  //   };
-  // }, [])
+  //   return lines.map((line, index) => {
+  //     if (line.trim() === "") {
+  //       return <br key={index} />;
+  //     } else {
+  //       let formattedLine = line.replace(/\\'/g, "'"); // Replace \\' with '
+  //       formattedLine = formattedLine.replace(
+  //         /\\\*(.*?)\\\*/g,
+  //         "<strong>$1</strong>"
+  //       ); // Wrap \\\'something\\\' in <strong> tags
+
+  //       try {
+  //         const jsonObject = JSON.parse(formattedLine);
+  //         return <pre key={index}>{JSON.stringify(jsonObject, null, 2)}</pre>; // Render JSON nicely
+  //       } catch (error) {
+  //         return (
+  //           <p
+  //             key={index}
+  //             dangerouslySetInnerHTML={{ __html: formattedLine }}
+  //           />
+  //         );
+  //       }
+  //     }
+  //   });
+  // };
 
   function getScrapedData() {
     setLoading(true);
@@ -59,30 +74,30 @@ export default function Home() {
   function addToNotion() {
     setAddingPage(true);
     if (context.authenticated) {
-      const eventSource = new EventSource(`${BASE_URL}/logs`);
+      const eventSource = new EventSource(`${BASE_URL}/create_notion_page`);
       eventSource.onmessage = function (event) {
-        console.log(event)
         const logData = event.data.replace("data: ", "");
         console.log(logData);
-        setLogs((prevLogs) => [...prevLogs, logData]);
+        const regex = /AgentFinish/;
+
+        const isAgentFinish = regex.test(logData);
+
+        const lines = logData.slice(2, -1).split("\n");
+
+        setLogs((prevLogs) => [...prevLogs, ...lines]);
+
+        if (logData.includes("AgentFinish")) {
+          console.log("hello");
+          eventSource.close();
+          setNotionPageCreated(true);
+          setAddingPage(false);
+        }
       };
       eventSource.onerror = (event) => {
-        console.error('EventSource failed', event);
-      };  
-      // fetch(`${BASE_URL}/create_notion_page`, {
-      //   method: "POST",
-      //   body: JSON.stringify({ competitor_info: comeptitorData }),
-      //   headers: { "Content-Type": "application/json" },
-      // })
-      //   .then((data) => data.json())
-      //   .then((resp) => {
-      //     if (resp.message === "success") {
-      //       setNotionPageCreated(true);
-      //       setAddingPage(false);
-      //     } else {
-      //       setAddingPage(false);
-      //     }
-      //   });
+        console.error("EventSource failed", event);
+        setNotionPageCreated(false);
+        setAddingPage(false);
+      };
     } else {
       setShowNoAuthToast(true);
       setAddingPage(false);
@@ -117,13 +132,37 @@ export default function Home() {
           </button>
           <button
             onClick={addToNotion}
-            // disabled={comeptitorData === "" || addingPage ? true : false}
-            className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 `
-          }
+            disabled={comeptitorData === "" || addingPage ? true : false}
+            className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 ${comeptitorData === "" || addingPage ? "opacity-50" : "opacity-100"}`}
           >
-            {addingPage ? "adding..." : "Add to Notion"}
+            {addingPage ? "Adding..." : "Add to Notion"}
           </button>
         </div>
+
+        {logs.length !== 0 && (
+          <>
+            <div
+              className="flex flex-row self-start gap-2 cursor-pointer"
+              onClick={() => {
+                setShowLogs(!showLogs);
+              }}
+            >
+              {showLogs ? (
+                <p>&#x25BC;</p>
+              ) : (
+                <p className="rotate-90">&#x25B2;</p>
+              )}
+              {showLogs ? "Hide Logs" : "Show Logs"}
+            </div>
+            <pre
+              className={`${
+                showLogs ? "block" : "hidden"
+              } max-w-prose text-wrap max-h-48 overflow-y-auto`}
+            >
+              {logs}
+            </pre>
+          </>
+        )}
         {comeptitorData && (
           <pre className="max-w-prose text-wrap">{comeptitorData}</pre>
         )}

@@ -154,7 +154,12 @@ def stream_logs():
     def generate_log_stream():
         while True:
             if logs_buffer:
-                yield logs_buffer.pop(0)  # Yield each log one by one
+                # Format each log message as an SSE event
+                yield f"data: {logs_buffer.pop(0)}\n\n"
+            else:
+                # If there are no logs available, yield a comment line to keep the connection alive
+                # yield ": ping\n\n"
+                time.sleep(1)
 
     return Response(generate_log_stream(), mimetype="text/event-stream")
 
@@ -280,7 +285,7 @@ def scrape_website():
     # return response
 
 
-@app.route("/create_notion_page", methods=["POST"])
+@app.route("/create_notion_page", methods=["GET"])
 def create_notion_page():
     """
     Create a Notion page with information about a competitor.
@@ -289,26 +294,42 @@ def create_notion_page():
         competitor_info (str): The information about the competitor to be added to the Notion page.
         agent (Agent): The Crew AI agent instance with Notion access.
     """
-    # global competitor_info
-    competitor_info = request.json.get("competitor_info")
+    global competitor_info
+    # competitor_info = request.json.get("competitor_info")
+    
+    def step_callback(step_output):
+        nonlocal logs_buffer  # Use nonlocal to modify the outer variable
+        logs_buffer.extend(step_parser(step_output))
+
+    logs_buffer = [] 
+    
+    agent = Agent(
+        role="Notion Agent",
+        goal="Take action on Notion.",
+        backstory="You are an AI Agent with access to Notion",
+        verbose=True,
+        tools=composio_crewai,
+        llm=llm,
+        step_callback=step_callback,  # change this to a callback function.
+    )
+    
     task = Task(
         description=f"Create a page by the name of the competitor if the name already exists just add something else as prefix or suffix. Create this page in the page 'Competition research' and put the pointer regarding the competitor in that page which you will create. Put the pointers as they are DO NOT change them. \n Pointers to be put in the page - {competitor_info}",
         expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
         agent=agent,
+        async_execution=True,
     )
     task.execute()
-    # def generate_log_stream():
-    #     for step_output in task.execute():
-    #         for log_event in st_callback(step_output):
-    #             yield log_event
 
-    logging.info("Notion page created.")
-    return jsonify({"message": "success"})
-    # return Response(generate_log_stream(), mimetype="text/event-stream")
+    def generate_log_stream():
+        while True:
+            if logs_buffer:
+                # Format each log message as an SSE event
+                yield f"data: {logs_buffer.pop(0)}\n\n"
+            else:
+                time.sleep(1)
 
-
-# authenticate()
-
+    return Response(generate_log_stream(), mimetype="text/event-stream")
 
 def main():
     app.run(debug=True)
