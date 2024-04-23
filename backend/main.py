@@ -16,19 +16,22 @@ CORS(app)
 
 competitor_info = ""
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # Load API keys from environment variables
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    raise ValueError('OPENAI_API_KEY environment variable must be set.')
+    raise ValueError("OPENAI_API_KEY environment variable must be set.")
 
 # Initialize OpenAI and ComposioToolset instances
 llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model="gpt-4-turbo")
 composio_crewai = ComposioToolset([App.NOTION])
 logging.info(f"Composio ToolSet loaded: {composio_crewai}")
 
-def st_callback(step_output):
+
+def step_parser(step_output):
     # print(step_output)
     action_log = ""
     observation_log = ""
@@ -37,7 +40,12 @@ def st_callback(step_output):
         # print(type(step))
         if isinstance(step, tuple) and len(step) == 2:
             action, observation = step
-            if isinstance(action, dict) and "tool" in action and "tool_input" in action and "log" in action:
+            if (
+                isinstance(action, dict)
+                and "tool" in action
+                and "tool_input" in action
+                and "log" in action
+            ):
                 print(f"# Action")
                 # print(f"**Tool:** {action['tool']}")
                 # print(f"**Tool Input** {action['tool_input']}")
@@ -47,12 +55,20 @@ def st_callback(step_output):
                 #     f"**Action Input:** ```json\n{action['tool_input']}\n```")
             elif isinstance(action, str):
                 # action_str = str(action)
-                thought_match = re.search(r'Thought: (.*)', action)
-                action_match = re.search(r'Action: (.*)', action)
-                action_input_match = re.search(r'Action Input: (.*)', action)
-                only_thought =  thought_match.group(1).split('\n')[0] if thought_match else ""
-                only_action = action_match.group(1).split('\n')[0] if action_match else ""
-                only_action_input = action_input_match.group(1).split('\n')[0] if action_input_match else ""
+                thought_match = re.search(r"Thought: (.*)", action)
+                action_match = re.search(r"Action: (.*)", action)
+                action_input_match = re.search(r"Action Input: (.*)", action)
+                only_thought = (
+                    thought_match.group(1).split("\n")[0] if thought_match else ""
+                )
+                only_action = (
+                    action_match.group(1).split("\n")[0] if action_match else ""
+                )
+                only_action_input = (
+                    action_input_match.group(1).split("\n")[0]
+                    if action_input_match
+                    else ""
+                )
                 all_string = f"Thought: {only_thought} \n\n Action: {only_action} \n\n Action Input: {only_action_input}"
                 action_log = all_string
                 # print(all_string)
@@ -60,12 +76,20 @@ def st_callback(step_output):
             else:
                 # print(type(action))
                 action_str = str(action)
-                thought_match = re.search(r'Thought: (.*)', action_str)
-                action_match = re.search(r'Action: (.*)', action_str)
-                action_input_match = re.search(r'Action Input: (.*)', action_str)
-                only_thought =  thought_match.group(1).split('\n')[0] if thought_match else ""
-                only_action = action_match.group(1).split('\n')[0] if action_match else ""
-                only_action_input = action_input_match.group(1).split('\n')[0] if action_input_match else ""
+                thought_match = re.search(r"Thought: (.*)", action_str)
+                action_match = re.search(r"Action: (.*)", action_str)
+                action_input_match = re.search(r"Action Input: (.*)", action_str)
+                only_thought = (
+                    thought_match.group(1).split("\n")[0] if thought_match else ""
+                )
+                only_action = (
+                    action_match.group(1).split("\n")[0] if action_match else ""
+                )
+                only_action_input = (
+                    action_input_match.group(1).split("\n")[0]
+                    if action_input_match
+                    else ""
+                )
                 all_string = f"Thought: {only_thought} \n\n Action: {only_action} \n\n Action Input: {only_action_input}"
                 action_log = all_string
                 # print(all_string)
@@ -73,16 +97,16 @@ def st_callback(step_output):
 
             print(f"**Observation**")
             if isinstance(observation, str):
-                observation_lines = observation.split('\n')
+                observation_lines = observation.split("\n")
                 observation_log = observation
                 for line in observation_lines:
-                    if line.startswith('Title: '):
+                    if line.startswith("Title: "):
                         print(f"**Title:** {line[7:]}")
-                    elif line.startswith('Link: '):
+                    elif line.startswith("Link: "):
                         print(f"**Link:** {line[6:]}")
-                    elif line.startswith('Snippet: '):
+                    elif line.startswith("Snippet: "):
                         print(f"**Snippet:** {line[9:]}")
-                    elif line.startswith('-'):
+                    elif line.startswith("-"):
                         print(line)
                     else:
                         print(line)
@@ -92,43 +116,53 @@ def st_callback(step_output):
         else:
             print(step)
         print(f"Action:\n {action_log} \n\n Observation: \n {observation_log}")
-        yield f"Action:\n {action_log} \n\n Observation: \n {observation_log}"
+        yield f"Action:\n {action_log} \n\n Observation: \n {observation_log}".encode(
+            "utf-8"
+        )
 
-# Initialize Agent
-agent = Agent(
-    role="Notion Agent",
-    goal="Take action on Notion.",
-    backstory="You are an AI Agent with access to Notion",
-    verbose=True,
-    tools=composio_crewai,
-    llm=llm,
-    step_callback=st_callback
-)
 
 # SSE test route
 @app.route("/logs", methods=["GET"])
 def stream_logs():
-    # def event_stream():
-    #     while True:
-    #         time.sleep(1)
-    #         yield f'data: something something\n\n'
+
+    # Define a callback function to handle step outputs
+    def step_callback(step_output):
+        nonlocal logs_buffer  # Use nonlocal to modify the outer variable
+        logs_buffer.extend(step_parser(step_output))
+
+    logs_buffer = []  # Buffer to store logs from the callback
+    # Initialize Agent
+    agent = Agent(
+        role="Notion Agent",
+        goal="Take action on Notion.",
+        backstory="You are an AI Agent with access to Notion",
+        verbose=True,
+        tools=composio_crewai,
+        llm=llm,
+        step_callback=step_callback,  # change this to a callback function.
+    )
+
     task = Task(
         description=f"just create a page in competitor research page with the name 'xyz'",
         expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
         agent=agent,
-        
+        async_execution=True,
     )
-    # task.execute()
+
+    task.execute()
+
     def generate_log_stream():
-        for step_output in task.execute():
-            logs = st_callback(step_output)
-            yield logs
+        while True:
+            if logs_buffer:
+                yield logs_buffer.pop(0)  # Yield each log one by one
+
     return Response(generate_log_stream(), mimetype="text/event-stream")
+
 
 @app.route("/authenticate", methods=["GET"])
 def authenticate():
     # entity_id = uuid4()
-    entity_id = request.args.get('entity_id')
+    entity_id = request.args.get("entity_id")
     print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
     if entity.is_app_authenticated(App.NOTION) == False:
@@ -138,22 +172,21 @@ def authenticate():
         )
         # confirm  = resp.wait_until_active()
         # print(confirm)
-        return jsonify({
-            "URL": resp.redirectUrl, 
-            "message": "success"
-        })
+        return jsonify({"URL": resp.redirectUrl, "message": "success"})
     else:
         print(f"Entity {entity_id} is already authenticated with Notion")
         return jsonify({"message": f"error"})
 
+
 @app.route("/confirm_auth", methods=["GET"])
 def confirm_auth():
-    entity_id = request.args.get('entity_id')
+    entity_id = request.args.get("entity_id")
     print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
     confirm = entity.is_app_authenticated(App.NOTION)
     print(confirm)
     return jsonify({"auth_confirmation": confirm})
+
 
 def remove_tags(html: str) -> str:
     """
@@ -166,9 +199,10 @@ def remove_tags(html: str) -> str:
         str: The cleaned HTML string with specified tags removed.
     """
     soup = BeautifulSoup(html, "html.parser")
-    for tag in soup(['style', 'script', 'svg', 'path', 'clipboard-copy']):
+    for tag in soup(["style", "script", "svg", "path", "clipboard-copy"]):
         tag.decompose()
-    return ' '.join(soup.stripped_strings)
+    return " ".join(soup.stripped_strings)
+
 
 def get_info(cleaned_html: str) -> str:
     """
@@ -186,18 +220,19 @@ def get_info(cleaned_html: str) -> str:
         messages=[
             {
                 "role": "system",
-                "content": "You are an assistant who's responsible for reading competitors website data that I'll provide you and giving me relevant information on my competitor."
+                "content": "You are an assistant who's responsible for reading competitors website data that I'll provide you and giving me relevant information on my competitor.",
             },
             {
                 "role": "user",
-                "content": f"This is the data of the website of one of my competitors. I want a detailed point-wise analysis. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. \n Website Data: {cleaned_html}"
+                "content": f"This is the data of the website of one of my competitors. I want a detailed point-wise analysis. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. \n Website Data: {cleaned_html}",
             },
-        ]
+        ],
     )
     return response.choices[0].message.content
 
-@app.route('/scrape_website', methods=['POST'])
-@cross_origin(origins='*')
+
+@app.route("/scrape_website", methods=["POST"])
+@cross_origin(origins="*")
 def scrape_website():
     """
     Scrape a website and its subpages for text content.
@@ -208,10 +243,10 @@ def scrape_website():
     Returns:
         List[str]: A list of cleaned text content from the website and its subpages.
     """
-    url = request.json.get('url')
+    url = request.json.get("url")
     content = []
     reqs = requests.get(url)
-    soup = BeautifulSoup(reqs.content, 'html.parser')
+    soup = BeautifulSoup(reqs.content, "html.parser")
     content.append(remove_tags(reqs.content))
 
     # urls = set()
@@ -231,20 +266,21 @@ def scrape_website():
     #             logging.warning(f"Error scraping {single_link}: {e}")
 
     # print(content)
-    cleaned_content = '\n'.join(content)
+    cleaned_content = "\n".join(content)
     # print(cleaned_content)
     global competitor_info
     competitor_info = get_info(cleaned_content)
     return jsonify(competitor_info)
-    
+
     # # Set CORS headers
     # response.headers['Access-Control-Allow-Origin'] = '*'  # Allow requests from any origin
     # response.headers['Access-Control-Allow-Methods'] = 'POST'  # Allow POST requests
     # response.headers['Access-Control-Allow-Headers'] = 'Content-Type'  # Allow the Content-Type header
-    
+
     # return response
 
-@app.route('/create_notion_page', methods=['POST'])
+
+@app.route("/create_notion_page", methods=["POST"])
 def create_notion_page():
     """
     Create a Notion page with information about a competitor.
@@ -254,7 +290,7 @@ def create_notion_page():
         agent (Agent): The Crew AI agent instance with Notion access.
     """
     # global competitor_info
-    competitor_info = request.json.get('competitor_info')
+    competitor_info = request.json.get("competitor_info")
     task = Task(
         description=f"Create a page by the name of the competitor if the name already exists just add something else as prefix or suffix. Create this page in the page 'Competition research' and put the pointer regarding the competitor in that page which you will create. Put the pointers as they are DO NOT change them. \n Pointers to be put in the page - {competitor_info}",
         expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
@@ -270,10 +306,13 @@ def create_notion_page():
     return jsonify({"message": "success"})
     # return Response(generate_log_stream(), mimetype="text/event-stream")
 
+
 # authenticate()
+
 
 def main():
     app.run(debug=True)
+
 
 if __name__ == "__main__":
     main()
