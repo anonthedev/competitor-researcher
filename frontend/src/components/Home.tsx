@@ -10,41 +10,13 @@ export default function Home() {
   const [url, setURL] = useState("");
   const [loading, setLoading] = useState(false);
   const [comeptitorData, setCompetitorData] = useState("");
-  const [notionPageCreated, setNotionPageCreated] = useState(false);
+  const [notionPageCreated, setNotionPageCreated] = useState<boolean | undefined>();
   const [showNoAuthToast, setShowNoAuthToast] = useState(false);
   const [addingPage, setAddingPage] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const context = useContext(GlobalContext);
 
   const [logs, setLogs] = useState<any[]>([]);
-
-  // const formatText = (text) => {
-  //   const lines = text.split("\n");
-
-  //   return lines.map((line, index) => {
-  //     if (line.trim() === "") {
-  //       return <br key={index} />;
-  //     } else {
-  //       let formattedLine = line.replace(/\\'/g, "'"); // Replace \\' with '
-  //       formattedLine = formattedLine.replace(
-  //         /\\\*(.*?)\\\*/g,
-  //         "<strong>$1</strong>"
-  //       ); // Wrap \\\'something\\\' in <strong> tags
-
-  //       try {
-  //         const jsonObject = JSON.parse(formattedLine);
-  //         return <pre key={index}>{JSON.stringify(jsonObject, null, 2)}</pre>; // Render JSON nicely
-  //       } catch (error) {
-  //         return (
-  //           <p
-  //             key={index}
-  //             dangerouslySetInnerHTML={{ __html: formattedLine }}
-  //           />
-  //         );
-  //       }
-  //     }
-  //   });
-  // };
 
   function getScrapedData() {
     setLoading(true);
@@ -74,20 +46,24 @@ export default function Home() {
 
   function addToNotion() {
     setAddingPage(true);
+    setNotionPageCreated(undefined)
     setLogs([])
     if (context.authenticated) {
       const eventSource = new EventSource(`${BASE_URL}/create_notion_page`);
       eventSource.onmessage = function (event) {
         const logData = event.data.replace("data: ", "");
 
-        const lines = logData.slice(2, -1).split("\n");
+        const lines = logData.slice(2, -1).replace("\\n\\n", " ").split("\\n");
 
         setLogs((prevLogs) => [...prevLogs, ...lines]);
 
         if (logData.includes("AgentFinish")) {
-          console.log("hello");
           eventSource.close();
           setNotionPageCreated(true);
+          setAddingPage(false);
+        } else if (logData.includes("AgentFinish")) {
+          eventSource.close();
+          setNotionPageCreated(false);
           setAddingPage(false);
         }
       };
@@ -102,15 +78,13 @@ export default function Home() {
     }
   }
 
-  // console.log(logs)
-
   return (
-    <main className="min-h-screen w-screen flex flex-col gap-6 items-center pt-[40vh] pb-5">
+    <main className="min-h-screen w-screen flex flex-col gap-6 items-center pt-[40vh] pb-5 md:px-5 md:pt-[30vh]">
       <SignIn />
       <SignOut />
-      <h1 className="text-5xl font-bold">Competitor Research</h1>
+      <h1 className="text-5xl font-bold text-center">Competitor Research</h1>
       <section className="flex flex-col items-center justify-center gap-6">
-        <div className="flex flex-row gap-2 items-center justify-center">
+        <div className="flex flex-row gap-2 items-center justify-center md:flex-col md:items-center">
           <input
             onChange={(e) => {
               setURL(e.target.value);
@@ -137,8 +111,8 @@ export default function Home() {
           </button>
         </div>
 
-        {logs.length !== 0 && (
-          <>
+        {logs && (
+          <div className="bg-gray-900 flex flex-col gap-2 w-full p-2 rounded-md">
             <div
               className="flex flex-row self-start gap-2 cursor-pointer"
               onClick={() => {
@@ -152,21 +126,24 @@ export default function Home() {
               )}
               {showLogs ? "Hide Logs" : "Show Logs"}
             </div>
-            <pre
+            <div
               className={`${
                 showLogs ? "block" : "hidden"
-              } max-w-prose text-wrap max-h-48 overflow-y-auto`}
+              } max-w-prose text-wrap max-h-48 overflow-y-auto flex flex-col`}
             >
-              {logs}
-            </pre>
-          </>
+              {logs.map((log)=>(<p>{log}</p>))}
+            </div>
+          </div>
         )}
         {comeptitorData && (
           <pre className="max-w-prose text-wrap">{comeptitorData}</pre>
         )}
       </section>
-      {notionPageCreated && (
+      {notionPageCreated === true && (
         <Toast toast="Notion page created." type="success" />
+      )}
+      {notionPageCreated === false && (
+        <Toast toast="Notion page creation failed, Please try again in sometime." type="error" />
       )}
       {showNoAuthToast && (
         <Toast toast="Please authenticate through notion first" type="error" />
