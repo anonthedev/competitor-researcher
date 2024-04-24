@@ -112,7 +112,7 @@ def authenticate():
     print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
     if entity.is_app_authenticated(App.NOTION) == False:
-        resp = entity.initiate_connection(App.NOTION)
+        resp = entity.initiate_connection(app_name = App.NOTION)
         print(
             f"Please authenticate {App.NOTION} in the browser and come back here. URL: {resp.redirectUrl}"
         )
