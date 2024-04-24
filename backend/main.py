@@ -295,6 +295,7 @@ def create_notion_page():
         agent (Agent): The Crew AI agent instance with Notion access.
     """
     global competitor_info
+    print(competitor_info)
     # competitor_info = request.json.get("competitor_info")
     
     def step_callback(step_output):

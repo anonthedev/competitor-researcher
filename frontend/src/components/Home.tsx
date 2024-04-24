@@ -48,6 +48,7 @@ export default function Home() {
 
   function getScrapedData() {
     setLoading(true);
+    setCompetitorData("")
     let options = {
       method: "POST",
       body: JSON.stringify({
@@ -73,14 +74,11 @@ export default function Home() {
 
   function addToNotion() {
     setAddingPage(true);
+    setLogs([])
     if (context.authenticated) {
       const eventSource = new EventSource(`${BASE_URL}/create_notion_page`);
       eventSource.onmessage = function (event) {
         const logData = event.data.replace("data: ", "");
-        console.log(logData);
-        const regex = /AgentFinish/;
-
-        const isAgentFinish = regex.test(logData);
 
         const lines = logData.slice(2, -1).split("\n");
 
