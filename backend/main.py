@@ -193,21 +193,21 @@ def scrape_website():
     soup = BeautifulSoup(reqs.content, "html.parser")
     content.append(remove_tags(reqs.content))
 
-    urls = set()
-    for link in soup.find_all('a'):
-        fetch_link = f"{url}{link.get('href')}" if chr(ord(link.get('href')[0])) == '/' else link.get('href')
-        if "./" in fetch_link:
-            fetch_link = fetch_link.replace("./", "/")
-            fetch_link = f"{url}{fetch_link}"
-        urls.add(fetch_link)
+    # urls = set()
+    # for link in soup.find_all('a'):
+    #     fetch_link = f"{url}{link.get('href')}" if chr(ord(link.get('href')[0])) == '/' else link.get('href')
+    #     if "./" in fetch_link:
+    #         fetch_link = fetch_link.replace("./", "/")
+    #         fetch_link = f"{url}{fetch_link}"
+    #     urls.add(fetch_link)
 
-    for single_link in urls:
-        if "mailto" not in single_link and single_link.count('/') <= 3 and "x.com" not in single_link and "twitter.com" not in single_link and "instagram.com" not in single_link and "youtube.com" not in single_link and "youtu.be" not in single_link and "tiktok.com" not in single_link:
-            try:
-                r = requests.get(single_link)
-                content.append(remove_tags(r.content))
-            except requests.exceptions.RequestException as e:
-                logging.warning(f"Error scraping {single_link}: {e}")
+    # for single_link in urls:
+    #     if "mailto" not in single_link and single_link.count('/') <= 3 and "x.com" not in single_link and "twitter.com" not in single_link and "instagram.com" not in single_link and "youtube.com" not in single_link and "youtu.be" not in single_link and "tiktok.com" not in single_link:
+    #         try:
+    #             r = requests.get(single_link)
+    #             content.append(remove_tags(r.content))
+    #         except requests.exceptions.RequestException as e:
+    #             logging.warning(f"Error scraping {single_link}: {e}")
 
     cleaned_content = "\n".join(content)
     global competitor_info
