@@ -3,7 +3,7 @@ import re
 import time
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 from composio_crewai import ComposioToolset, App, ComposioSDK
 from crewai import Agent, Task
 from langchain_openai import ChatOpenAI
@@ -107,7 +107,6 @@ def step_parser(step_output):
 
 @app.route("/authenticate", methods=["GET"])
 def authenticate():
-    # entity_id = uuid4()
     entity_id = request.args.get("entity_id")
     print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
@@ -159,20 +158,23 @@ def get_info(cleaned_html: str) -> str:
         str: The response from the OpenAI API with information about the competitor.
     """
     client = OpenAI(api_key=OPENAI_API_KEY)
-    response = client.chat.completions.create(
-        model="gpt-4-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an assistant who's responsible for reading competitors website data that I'll provide you and giving me relevant information on my competitor.",
-            },
-            {
-                "role": "user",
-                "content": f"This is the data of the website of one of my competitors. I want a detailed point-wise analysis. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. \n Website Data: {cleaned_html}",
-            },
-        ],
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an assistant who's responsible for reading competitors website data that I'll provide you and giving me relevant information on my competitor.",
+                },
+                {
+                    "role": "user",
+                    "content": f"This is the data of the website of one of my competitors. I want a detailed point-wise analysis. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. \n Website Data: {cleaned_html}",
+                },
+            ],
+        )
+        return response.choices[0].message.content
+    except OpenAIError as e:
+        return jsonify({"error": f"{e}"})
 
 
 @app.route("/scrape_website", methods=["POST"])
@@ -193,21 +195,21 @@ def scrape_website():
     soup = BeautifulSoup(reqs.content, "html.parser")
     content.append(remove_tags(reqs.content))
 
-    urls = set()
-    for link in soup.find_all('a'):
-        fetch_link = f"{url}{link.get('href')}" if chr(ord(link.get('href')[0])) == '/' else link.get('href')
-        if "./" in fetch_link:
-            fetch_link = fetch_link.replace("./", "/")
-            fetch_link = f"{url}{fetch_link}"
-        urls.add(fetch_link)
+    # urls = set()
+    # for link in soup.find_all('a'):
+    #     fetch_link = f"{url}{link.get('href')}" if chr(ord(link.get('href')[0])) == '/' else link.get('href')
+    #     if "./" in fetch_link:
+    #         fetch_link = fetch_link.replace("./", "/")
+    #         fetch_link = f"{url}{fetch_link}"
+    #     urls.add(fetch_link)
 
-    for single_link in urls:
-        if "mailto" not in single_link and single_link.count('/') <= 3 and "x.com" not in single_link and "twitter.com" not in single_link and "instagram.com" not in single_link and "youtube.com" not in single_link and "youtu.be" not in single_link and "tiktok.com" not in single_link:
-            try:
-                r = requests.get(single_link)
-                content.append(remove_tags(r.content))
-            except requests.exceptions.RequestException as e:
-                logging.warning(f"Error scraping {single_link}: {e}")
+    # for single_link in urls:
+    #     if "mailto" not in single_link and single_link.count('/') <= 3 and "x.com" not in single_link and "twitter.com" not in single_link and "instagram.com" not in single_link and "youtube.com" not in single_link and "youtu.be" not in single_link and "tiktok.com" not in single_link:
+    #         try:
+    #             r = requests.get(single_link)
+    #             content.append(remove_tags(r.content))
+    #         except requests.exceptions.RequestException as e:
+    #             logging.warning(f"Error scraping {single_link}: {e}")
 
     cleaned_content = "\n".join(content)
     global competitor_info
@@ -224,7 +226,7 @@ def create_notion_page():
         agent (Agent): The Crew AI agent instance with Notion access.
     """
     global competitor_info
-    print(competitor_info)
+    parent_page = request.args.get('parent_page')
     
     def step_callback(step_output):
         nonlocal logs_buffer
@@ -243,7 +245,7 @@ def create_notion_page():
     )
     
     task = Task(
-        description=f"Create a page by the name of the competitor if the name already exists just add something else as prefix or suffix. Create this page in the page 'Competition research' and put the pointer regarding the competitor in that page which you will create. Put the pointers as they are DO NOT change them. \n Pointers to be put in the page - {competitor_info}",
+        description=f"Create a page by the name of the competitor if the name already exists just add something else as prefix or suffix. Create this page in the page '${parent_page}' if it doesn't exist just put it under any page and put the pointer regarding the competitor in that page which you will create. Put the pointers as they are DO NOT change them. \n Pointers to be put in the page - {competitor_info}",
         expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
         agent=agent,
         async_execution=True,

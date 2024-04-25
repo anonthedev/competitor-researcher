@@ -9,8 +9,9 @@ import { BASE_URL } from "./utils";
 
 export default function Authenticate() {
   const [authURL, setAuthURL] = useState("");
+  const [loading, setLoading] = useState(false)
   // const [authenticated, setAuthenticated] = useState<boolean>();
-  const context = useContext(GlobalContext)
+  const context = useContext(GlobalContext);
 
   useEffect(() => {
     if (!localStorage.getItem("entity_id")) {
@@ -23,12 +24,9 @@ export default function Authenticate() {
     let entity_id = localStorage.getItem("entity_id");
     if (!authURL) {
       const interval = setInterval(() => {
-        fetch(
-          `${BASE_URL}/confirm_auth?entity_id=${entity_id?.toString()}`
-        )
+        fetch(`${BASE_URL}/confirm_auth?entity_id=${entity_id?.toString()}`)
           .then((data) => data.json())
           .then((resp: any) => {
-            // console.log(resp);
             context.setAuthenticated(resp.auth_confirmation);
             if (resp) {
             }
@@ -54,34 +52,35 @@ export default function Authenticate() {
   }, [authURL]);
 
   function notionAuth() {
+    setLoading(true)
     let entity_id = localStorage.getItem("entity_id");
     console.log(context);
-    fetch(
-      `${BASE_URL}/authenticate?entity_id=${entity_id?.toString()}`
-    )
+    fetch(`${BASE_URL}/authenticate?entity_id=${entity_id?.toString()}`)
       .then((data) => data.json())
       .then((resp) => {
         if (resp.message === "error") {
           context.setAuthenticated(true);
+          setLoading(false)
         } else {
-          // console.log("asf");
           setAuthURL(resp.URL);
+          setLoading(false)
         }
       })
       .catch((err) => {
         console.log(err);
+        setLoading(false)
       });
   }
   return (
     <main className="w-screen min-h-screen flex flex-col gap-5 items-center justify-center">
       <button
-        disabled={authURL !== "" ? true : false}
+        disabled={authURL !== "" || loading ? true : false}
         className={`bg-white text-black font-semibold font-raleway py-2 px-4 rounded-md ${
-          authURL !== "" ? "opacity-50" : "opacity-100"
+          authURL !== "" || loading ? "opacity-50" : "opacity-100"
         }`}
         onClick={notionAuth}
       >
-        Authentiate with Notion
+        {loading ? "Loading..." : "Authentiate with Notion"}
       </button>
       <Link
         href={"/"}
@@ -89,7 +88,19 @@ export default function Authenticate() {
       >
         Proceed to Homepage
       </Link>
-      {context.authenticated && <Toast toast="Already authenticated" type="success" />}
+      {authURL && (
+        <div className="max-w-prose text-center">
+          <p>
+            If you're not redirected to the notion login page click{" "}
+            <a className="underline text-blue-600" href={authURL} target="_blank">
+              here
+            </a> to get to the login page.
+          </p>
+        </div>
+      )}
+      {context.authenticated && (
+        <Toast toast="Already authenticated" type="success" />
+      )}
     </main>
   );
 }
