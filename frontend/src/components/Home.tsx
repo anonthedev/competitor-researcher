@@ -24,6 +24,19 @@ export default function Home() {
 
   const context = useContext(GlobalContext);
 
+  useEffect(()=>{
+    if (!localStorage.getItem("entity_id")) {
+        context.setAuthenticated(false)
+    } else {
+        let entity_id = localStorage.getItem("entity_id")
+        fetch(`${BASE_URL}/confirm_auth?entity_id=${entity_id}`)
+        .then((data)=>data.json())
+        .then((resp)=>{
+            context.setAuthenticated(resp.auth_confirmation)
+        })
+    }
+  }, [])
+
   function getScrapedData() {
     setAnalyzingCompetitor(true);
     setCompetitorData("");
