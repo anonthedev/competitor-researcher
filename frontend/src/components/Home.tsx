@@ -9,15 +9,15 @@ import Markdown from "react-markdown";
 
 export default function Home() {
   const [url, setURL] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [comeptitorData, setCompetitorData] = useState("");
+  const [analyzingCompetitor, setAnalyzingCompetitor] = useState(false);
+  const [competitorData, setCompetitorData] = useState("");
   const [dataScraped, setDataScraped] = useState<boolean>();
   const [notionPageCreated, setNotionPageCreated] = useState<
     boolean | undefined
   >();
   const [showNoAuthToast, setShowNoAuthToast] = useState(false);
   const [addingPage, setAddingPage] = useState(false);
-  const [showLogs, setShowLogs] = useState(true);
+  const [showLogs, setShowLogs] = useState(false);
   const [showUserPageInput, setShowUserPageInput] = useState(false);
   const [userPageInput, setUserPageInput] = useState("");
   const [logs, setLogs] = useState<any[]>([]);
@@ -25,8 +25,9 @@ export default function Home() {
   const context = useContext(GlobalContext);
 
   function getScrapedData() {
-    setLoading(true);
+    setAnalyzingCompetitor(true);
     setCompetitorData("");
+    setShowLogs(true)
     let options = {
       method: "POST",
       body: JSON.stringify({
@@ -42,16 +43,16 @@ export default function Home() {
       .then((resp) => {
         if (!resp.error) {
           setCompetitorData(resp);
-          setLoading(false);
+          setAnalyzingCompetitor(false);
           setDataScraped(true);
         } else {
-          setLoading(false);
+          setAnalyzingCompetitor(false);
           setDataScraped(false);
         }
       })
       .catch((err) => {
         console.log(err);
-        setLoading(false);
+        setAnalyzingCompetitor(false);
         setDataScraped(false);
       });
   }
@@ -60,6 +61,7 @@ export default function Home() {
     setAddingPage(true);
     setShowUserPageInput(false);
     setNotionPageCreated(undefined);
+    setShowLogs(true)
     setLogs([]);
     if (context.authenticated && userPageInput) {
       const eventSource = new EventSource(
@@ -113,22 +115,21 @@ export default function Home() {
             placeholder="Enter the competitor's website (https://...)"
           />
           <button
-            disabled={loading || url === ""}
+            disabled={analyzingCompetitor || url === ""}
             onClick={getScrapedData}
             className={`bg-white text-black py-2 px-4 rounded-md ${
-              loading || url === "" ? "opacity-50" : "opacity-100"
+              analyzingCompetitor || url === "" ? "opacity-50" : "opacity-100"
             }`}
           >
-            {loading ? "Loading..." : "Do Magic"}
+            {analyzingCompetitor ? "Analyzing..." : "Analyze"}
           </button>
-          <div className="flex flex-col items-center">
             <button
               onClick={() => {
                 setShowUserPageInput(!showUserPageInput);
               }}
-              disabled={comeptitorData === "" || addingPage ? true : false}
+              disabled={competitorData === "" || addingPage ? true : false}
               className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 ${
-                comeptitorData === "" || addingPage
+                competitorData === "" || addingPage
                   ? "opacity-50"
                   : "opacity-100"
               }`}
@@ -139,7 +140,6 @@ export default function Home() {
                 ? "Adding..."
                 : "Add to Notion"}
             </button>
-          </div>
         </div>
 
         {showUserPageInput && (
@@ -160,9 +160,13 @@ export default function Home() {
               />
               <button
                 onClick={addToNotion}
-                disabled={comeptitorData === "" || addingPage || userPageInput === "" ? true : false}
+                disabled={
+                  competitorData === "" || addingPage || userPageInput === ""
+                    ? true
+                    : false
+                }
                 className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 ${
-                  comeptitorData === "" || addingPage || userPageInput === ""
+                  competitorData === "" || addingPage || userPageInput === ""
                     ? "opacity-50"
                     : "opacity-100"
                 }`}
@@ -173,34 +177,34 @@ export default function Home() {
           </div>
         )}
 
-        {logs.length !== 0 && (
-          <div className="bg-gray-900 flex flex-col gap-2 w-full p-2 rounded-md">
-            <div
-              className="flex flex-row self-start gap-2 cursor-pointer"
-              onClick={() => {
-                setShowLogs(!showLogs);
-              }}
-            >
-              {showLogs ? (
-                <p>&#x25BC;</p>
-              ) : (
-                <p className="rotate-90">&#x25B2;</p>
-              )}
-              {showLogs ? "Hide Logs" : "Show Logs"}
-            </div>
-            <div
-              className={`${
-                showLogs ? "block" : "hidden"
-              } max-w-prose text-wrap max-h-48 overflow-y-auto flex flex-col`}
-            >
-              {logs.map((log) => (
-                <p>{log}</p>
-              ))}
-            </div>
+        <div className="bg-gray-900 flex flex-col gap-2 w-full p-2 rounded-md">
+          <div
+            className="flex flex-row self-start gap-2 cursor-pointer"
+            onClick={() => {
+              setShowLogs(!showLogs);
+            }}
+          >
+            {showLogs ? <p>&#x25BC;</p> : <p className="rotate-90">&#x25B2;</p>}
+            {showLogs ? "Hide Logs" : "Show Logs"}
           </div>
-        )}
-        {comeptitorData && (
-          <Markdown className="max-w-prose text-wrap">{comeptitorData}</Markdown>
+          <div
+            className={`${
+              showLogs ? "block" : "hidden"
+            } max-w-prose text-wrap max-h-48 overflow-y-auto flex flex-col`}
+          >
+            {analyzingCompetitor === true ? (
+              <p>Analyzing Competitor... This might take a few seconds</p>
+            ) : analyzingCompetitor === false && competitorData !== "" ? (
+              <p>Analysis complete.</p>
+            ) : null}
+            {logs.length !== 0 && logs.map((log) => <p>{log}</p>)}
+          </div>
+        </div>
+
+        {competitorData && (
+          // <div className="max-w-prose" dangerouslySetInnerHTML={{__html: convertMarkdownToHTML(competitorData)}}>
+          // </div>
+          <Markdown className="max-w-prose">{competitorData}</Markdown>
         )}
       </section>
       {notionPageCreated === true && (
