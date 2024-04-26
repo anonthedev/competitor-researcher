@@ -245,7 +245,7 @@ def create_notion_page():
     )
     
     task = Task(
-        description=f"Create a page by the name of the competitor if the name already exists just add something else as prefix or suffix. Create this page in the page '${parent_page}' if it doesn't exist just put it under any page and put the pointer regarding the competitor in that page which you will create. Put the pointers as they are DO NOT change them. \n Pointers to be put in the page - {competitor_info}",
+        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them.\nPointers to be included in the page: {competitor_info}",
         expected_output="Confirm by listing pages that Nice page in notion around the competitor has been created.",
         agent=agent,
         async_execution=True,
