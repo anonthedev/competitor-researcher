@@ -5,6 +5,7 @@ import Toast from "./Toast";
 import SignIn from "./SignIn";
 import SignOut from "./SignOut";
 import { BASE_URL } from "./utils";
+import Markdown from "react-markdown";
 
 export default function Home() {
   const [url, setURL] = useState("");
@@ -108,7 +109,7 @@ export default function Home() {
               setURL(e.target.value);
             }}
             className="px-4 py-2 rounded-md bg-transparent text-white border-[1px] border-gray-500 w-96"
-            type="text"
+            type="url"
             placeholder="Enter the competitor's website (https://...)"
           />
           <button
@@ -199,7 +200,7 @@ export default function Home() {
           </div>
         )}
         {comeptitorData && (
-          <pre className="max-w-prose text-wrap">{comeptitorData}</pre>
+          <Markdown className="max-w-prose text-wrap">{comeptitorData}</Markdown>
         )}
       </section>
       {notionPageCreated === true && (
