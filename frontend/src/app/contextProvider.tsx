@@ -1,7 +1,6 @@
 "use client";
 
-import { BASE_URL } from "@/components/utils";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useState } from "react";
 
 export const GlobalContext = createContext<any>(null);
 

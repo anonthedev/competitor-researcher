@@ -7,7 +7,6 @@ export default function SignOut() {
   const context = useContext(GlobalContext)
   function signOut() {
     localStorage.clear();
-    console.log(context)
     context.setAuthenticated(false)
   }
   return (

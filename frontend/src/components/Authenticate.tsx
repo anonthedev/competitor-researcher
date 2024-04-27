@@ -10,7 +10,6 @@ import { BASE_URL } from "./utils";
 export default function Authenticate() {
   const [authURL, setAuthURL] = useState("");
   const [loading, setLoading] = useState(false)
-  // const [authenticated, setAuthenticated] = useState<boolean>();
   const context = useContext(GlobalContext);
 
   useEffect(() => {
@@ -28,8 +27,6 @@ export default function Authenticate() {
           .then((data) => data.json())
           .then((resp: any) => {
             context.setAuthenticated(resp.auth_confirmation);
-            if (resp) {
-            }
             clearInterval(interval);
           })
           .catch((err) => {

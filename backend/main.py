@@ -30,8 +30,6 @@ def step_parser(step_output):
     action_log = ""
     observation_log = ""
     for step in step_output:
-        # print(step)
-        # print(type(step))
         if isinstance(step, tuple) and len(step) == 2:
             action, observation = step
             if (
@@ -187,24 +185,7 @@ def scrape_website():
     url = request.json.get("url")
     content = []
     reqs = requests.get(url)
-    soup = BeautifulSoup(reqs.content, "html.parser")
     content.append(remove_tags(reqs.content))
-
-    # urls = set()
-    # for link in soup.find_all('a'):
-    #     fetch_link = f"{url}{link.get('href')}" if chr(ord(link.get('href')[0])) == '/' else link.get('href')
-    #     if "./" in fetch_link:
-    #         fetch_link = fetch_link.replace("./", "/")
-    #         fetch_link = f"{url}{fetch_link}"
-    #     urls.add(fetch_link)
-
-    # for single_link in urls:
-    #     if "mailto" not in single_link and single_link.count('/') <= 3 and "x.com" not in single_link and "twitter.com" not in single_link and "instagram.com" not in single_link and "youtube.com" not in single_link and "youtu.be" not in single_link and "tiktok.com" not in single_link:
-    #         try:
-    #             r = requests.get(single_link)
-    #             content.append(remove_tags(r.content))
-    #         except requests.exceptions.RequestException as e:
-    #             logging.warning(f"Error scraping {single_link}: {e}")
 
     cleaned_content = "\n".join(content)
     global competitor_info
@@ -254,7 +235,6 @@ def create_notion_page():
     def generate_log_stream():
         while True:
             if logs_buffer:
-                # Format each log message as an SSE event
                 yield f"data: {logs_buffer.pop(0)}\n\n"
             else:
                 time.sleep(1)

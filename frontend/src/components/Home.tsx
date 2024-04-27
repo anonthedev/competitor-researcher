@@ -4,8 +4,8 @@ import { GlobalContext } from "@/app/contextProvider";
 import Toast from "./Toast";
 import SignIn from "./SignIn";
 import SignOut from "./SignOut";
-import { BASE_URL } from "./utils";
 import Markdown from "react-markdown";
+import { BASE_URL } from "./utils";
 
 export default function Home() {
   const [url, setURL] = useState("");
@@ -103,7 +103,7 @@ export default function Home() {
           setAddingPage(false);
         } else if (
           logData.includes(
-            "the Action Input is not a vaild key, value dictionary"
+            "Action Input is not a vaild key"
           )
         ) {
           eventSource.close();
