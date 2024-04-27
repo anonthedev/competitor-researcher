@@ -25,8 +25,8 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable must be set.")
 
 llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model="gpt-4-turbo")
-composio_crewai = ComposioToolset([App.NOTION])
-logging.info(f"Composio ToolSet loaded: {composio_crewai}")
+# composio_crewai = ComposioToolset([App.NOTION])
+# logging.info(f"Composio ToolSet loaded: {composio_crewai}")
 
 
 def step_parser(step_output):
@@ -108,7 +108,6 @@ def step_parser(step_output):
 @app.route("/authenticate", methods=["GET"])
 def authenticate():
     entity_id = request.args.get("entity_id")
-    print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
     if entity.is_app_authenticated(App.NOTION) == False:
         resp = entity.initiate_connection(app_name = App.NOTION)
@@ -227,12 +226,15 @@ def create_notion_page():
     """
     global competitor_info
     parent_page = request.args.get('parent_page')
+    entity_id = request.args.get('entity_id')
     
     def step_callback(step_output):
         nonlocal logs_buffer
         logs_buffer.extend(step_parser(step_output))
 
     logs_buffer = [] 
+    
+    composio_crewai = ComposioToolset([App.NOTION], entity_id=entity_id)
     
     agent = Agent(
         role="Notion Agent",

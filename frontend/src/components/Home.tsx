@@ -36,13 +36,13 @@ export default function Home() {
             context.setAuthenticated(resp.auth_confirmation);
           })
           .catch((err) => {
-            console.log(err)
-            confirmAuth()
+            console.log(err);
+            confirmAuth();
           });
       }
     }
 
-    confirmAuth()
+    confirmAuth();
   }, []);
 
   function getScrapedData() {
@@ -84,9 +84,11 @@ export default function Home() {
     setNotionPageCreated(undefined);
     setShowLogs(true);
     setLogs([]);
-    if (context.authenticated && userPageInput) {
+    if (context.authenticated && userPageInput && competitorData) {
       const eventSource = new EventSource(
-        `${BASE_URL}/create_notion_page?parent_page=${userPageInput}`
+        `${BASE_URL}/create_notion_page?parent_page=${userPageInput}&entity_id=${localStorage.getItem(
+          "entity_id"
+        )}`
       );
       eventSource.onmessage = function (event) {
         const logData = event.data.replace("data: ", "");
@@ -131,9 +133,9 @@ export default function Home() {
             onChange={(e) => {
               setURL(e.target.value);
             }}
-            className="px-4 py-2 rounded-md bg-transparent text-white border-[1px] border-gray-500 w-96"
+            className="px-3 py-2 rounded-md bg-transparent text-white border-[1px] border-gray-500 w-96"
             type="url"
-            placeholder="Enter the competitor's website (https://...)"
+            placeholder="Enter the competitor's website (https://vercel.com)"
           />
           <button
             disabled={analyzingCompetitor || url === ""}
@@ -221,8 +223,6 @@ export default function Home() {
         </div>
 
         {competitorData && (
-          // <div className="max-w-prose" dangerouslySetInnerHTML={{__html: convertMarkdownToHTML(competitorData)}}>
-          // </div>
           <Markdown className="max-w-prose">{competitorData}</Markdown>
         )}
       </section>
