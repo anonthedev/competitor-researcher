@@ -24,23 +24,31 @@ export default function Home() {
 
   const context = useContext(GlobalContext);
 
-  useEffect(()=>{
-    if (!localStorage.getItem("entity_id")) {
-        context.setAuthenticated(false)
-    } else {
-        let entity_id = localStorage.getItem("entity_id")
+  useEffect(() => {
+    function confirmAuth() {
+      if (!localStorage.getItem("entity_id")) {
+        context.setAuthenticated(false);
+      } else {
+        let entity_id = localStorage.getItem("entity_id");
         fetch(`${BASE_URL}/confirm_auth?entity_id=${entity_id}`)
-        .then((data)=>data.json())
-        .then((resp)=>{
-            context.setAuthenticated(resp.auth_confirmation)
-        })
+          .then((data) => data.json())
+          .then((resp) => {
+            context.setAuthenticated(resp.auth_confirmation);
+          })
+          .catch((err) => {
+            console.log(err)
+            confirmAuth()
+          });
+      }
     }
-  }, [])
+
+    confirmAuth()
+  }, []);
 
   function getScrapedData() {
     setAnalyzingCompetitor(true);
     setCompetitorData("");
-    setShowLogs(true)
+    setShowLogs(true);
     let options = {
       method: "POST",
       body: JSON.stringify({
@@ -74,7 +82,7 @@ export default function Home() {
     setAddingPage(true);
     setShowUserPageInput(false);
     setNotionPageCreated(undefined);
-    setShowLogs(true)
+    setShowLogs(true);
     setLogs([]);
     if (context.authenticated && userPageInput) {
       const eventSource = new EventSource(
@@ -136,23 +144,21 @@ export default function Home() {
           >
             {analyzingCompetitor ? "Analyzing..." : "Analyze"}
           </button>
-            <button
-              onClick={() => {
-                setShowUserPageInput(!showUserPageInput);
-              }}
-              disabled={competitorData === "" || addingPage ? true : false}
-              className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 ${
-                competitorData === "" || addingPage
-                  ? "opacity-50"
-                  : "opacity-100"
-              }`}
-            >
-              {showUserPageInput && !addingPage
-                ? "Cancel"
-                : addingPage
-                ? "Adding..."
-                : "Add to Notion"}
-            </button>
+          <button
+            onClick={() => {
+              setShowUserPageInput(!showUserPageInput);
+            }}
+            disabled={competitorData === "" || addingPage ? true : false}
+            className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 ${
+              competitorData === "" || addingPage ? "opacity-50" : "opacity-100"
+            }`}
+          >
+            {showUserPageInput && !addingPage
+              ? "Cancel"
+              : addingPage
+              ? "Adding..."
+              : "Add to Notion"}
+          </button>
         </div>
 
         {showUserPageInput && (

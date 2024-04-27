@@ -243,10 +243,10 @@ def create_notion_page():
         llm=llm,
         step_callback=step_callback,
     )
-    
+    print(competitor_info)
     task = Task(
-        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them.\nPointers to be included in the page: {competitor_info}",
-        expected_output="",
+        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them.\nPointers to be included in the page: {competitor_info}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
+        expected_output="List down the contents of the page and title of the page created.",
         agent=agent,
         async_execution=True,
     )
