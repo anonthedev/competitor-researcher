@@ -25,9 +25,6 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable must be set.")
 
 llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model="gpt-4-turbo")
-# composio_crewai = ComposioToolset([App.NOTION])
-# logging.info(f"Composio ToolSet loaded: {composio_crewai}")
-
 
 def step_parser(step_output):
     action_log = ""
@@ -44,7 +41,7 @@ def step_parser(step_output):
                 and "log" in action
             ):
                 all_string = f"Log: \n {action['Action']} \n Action: {action['Action']}"
- 
+
             elif isinstance(action, str):
                 thought_match = re.search(r"Thought: (.*)", action)
                 action_match = re.search(r"Action: (.*)", action)
@@ -101,16 +98,15 @@ def step_parser(step_output):
         else:
             print(step)
         print(f"Action:\n {action_log} \n\n Observation: \n {observation_log}")
-        yield f" {action_log} \n\n Observation: \n {observation_log}".encode(
-            "utf-8"
-        )
+        yield f" {action_log} \n\n Observation: \n {observation_log}".encode("utf-8")
+
 
 @app.route("/authenticate", methods=["GET"])
 def authenticate():
     entity_id = request.args.get("entity_id")
     entity = ComposioSDK.get_entity(str(entity_id))
     if entity.is_app_authenticated(App.NOTION) == False:
-        resp = entity.initiate_connection(app_name = App.NOTION)
+        resp = entity.initiate_connection(app_name=App.NOTION)
         print(
             f"Please authenticate {App.NOTION} in the browser and come back here. URL: {resp.redirectUrl}"
         )
@@ -215,6 +211,7 @@ def scrape_website():
     competitor_info = get_info(cleaned_content)
     return jsonify(competitor_info)
 
+
 @app.route("/create_notion_page", methods=["GET"])
 def create_notion_page():
     """
@@ -263,6 +260,7 @@ def create_notion_page():
                 time.sleep(1)
 
     return Response(generate_log_stream(), mimetype="text/event-stream")
+
 
 def main():
     app.run(debug=True)
