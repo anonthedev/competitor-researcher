@@ -88,7 +88,7 @@ export default function Home() {
       const eventSource = new EventSource(
         `${BASE_URL}/create_notion_page?parent_page=${userPageInput}&entity_id=${localStorage.getItem(
           "entity_id"
-        )}`
+        )}&competitor_data=${Buffer.from(competitorData).toString('base64')}`
       );
       eventSource.onmessage = function (event) {
         const logData = event.data.replace("data: ", "");

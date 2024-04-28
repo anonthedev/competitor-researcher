@@ -10,11 +10,10 @@ from langchain_openai import ChatOpenAI
 import logging
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
+import base64
 
 app = Flask(__name__)
 CORS(app)
-
-competitor_info = ""
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -161,7 +160,7 @@ def get_info(cleaned_html: str) -> str:
                 },
                 {
                     "role": "user",
-                    "content": f"This is the data of the website of one of my competitors. I want a detailed point-wise analysis. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. \n Website Data: {cleaned_html}",
+                    "content": f"This is the data of the website of one of my competitors. I want a point-wise analysis. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. \n Website Data: {cleaned_html}",
                 },
             ],
         )
@@ -188,7 +187,6 @@ def scrape_website():
     content.append(remove_tags(reqs.content))
 
     cleaned_content = "\n".join(content)
-    global competitor_info
     competitor_info = get_info(cleaned_content)
     return jsonify(competitor_info)
 
@@ -197,14 +195,12 @@ def scrape_website():
 def create_notion_page():
     """
     Create a Notion page with information about a competitor.
-
-    Args:
-        competitor_info (str): The information about the competitor to be added to the Notion page.
-        agent (Agent): The Crew AI agent instance with Notion access.
     """
-    global competitor_info
     parent_page = request.args.get('parent_page')
     entity_id = request.args.get('entity_id')
+    competitor_data = request.args.get('competitor_data')
+    
+    decoded_competitor_data = base64.b64decode(competitor_data)
     
     def step_callback(step_output):
         nonlocal logs_buffer
@@ -223,9 +219,9 @@ def create_notion_page():
         llm=llm,
         step_callback=step_callback,
     )
-    print(competitor_info)
+    print(decoded_competitor_data)
     task = Task(
-        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them.\nPointers to be included in the page: {competitor_info}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
+        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them.\nPointers to be included in the page: {decoded_competitor_data}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
         expected_output="List down the contents of the page and title of the page created.",
         agent=agent,
         async_execution=True,
