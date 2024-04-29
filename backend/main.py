@@ -75,26 +75,9 @@ def step_parser(step_output):
                 all_string = f"Thought: {only_thought} \n\n Action: {only_action} \n\n Action Input: {only_action_input}"
                 action_log = all_string
 
-            print(f"**Observation**")
-            if isinstance(observation, str):
-                observation_lines = observation.split("\n")
-                observation_log = observation
-                for line in observation_lines:
-                    if line.startswith("Title: "):
-                        print(f"**Title:** {line[7:]}")
-                    elif line.startswith("Link: "):
-                        print(f"**Link:** {line[6:]}")
-                    elif line.startswith("Snippet: "):
-                        print(f"**Snippet:** {line[9:]}")
-                    elif line.startswith("-"):
-                        print(line)
-                    else:
-                        print(line)
-            else:
-                observation_log = str(observation)
+            observation_log = str(observation)
         else:
             print(step)
-        print(f"Action:\n {action_log} \n\n Observation: \n {observation_log}")
         yield f" {action_log} \n\n Observation: \n {observation_log}".encode("utf-8")
 
 
@@ -116,10 +99,8 @@ def authenticate():
 @app.route("/confirm_auth", methods=["GET"])
 def confirm_auth():
     entity_id = request.args.get("entity_id")
-    print(entity_id)
     entity = ComposioSDK.get_entity(str(entity_id))
     confirm = entity.is_app_authenticated(App.NOTION)
-    print(confirm)
     return jsonify({"auth_confirmation": confirm})
 
 
@@ -193,17 +174,10 @@ def scrape_website():
 
 @app.route("/create_notion_page", methods=["GET"])
 def create_notion_page():
-    """
-    Create a Notion page with information about a competitor.
-    """
     parent_page = request.args.get('parent_page')
     entity_id = request.args.get('entity_id')
     competitor_data = request.args.get('competitor_data')
-    # competitor_data = request.data
-    
     decoded_competitor_data = base64.b64decode(competitor_data)
-    
-    print(decoded_competitor_data)
     
     def step_callback(step_output):
         nonlocal logs_buffer
@@ -222,13 +196,14 @@ def create_notion_page():
         llm=llm,
         step_callback=step_callback,
     )
-    print(decoded_competitor_data)
+    
     task = Task(
         description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them. The pointers that I'll send you will be in Markdown format. \nPointers to be included in the page: {decoded_competitor_data}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
         expected_output="List down the contents of the page and title of the page created.",
         agent=agent,
         async_execution=True,
     )
+    
     task.execute()
 
     def generate_log_stream():

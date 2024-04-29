@@ -1,5 +1,5 @@
 "use client";
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { GlobalContext } from "@/app/contextProvider";
 import Toast from "./Toast";
 import SignIn from "./SignIn";
@@ -11,7 +11,7 @@ export default function Home() {
   const [url, setURL] = useState("");
   const [analyzingCompetitor, setAnalyzingCompetitor] = useState(false);
   const [competitorData, setCompetitorData] = useState("");
-  const [dataScraped, setDataScraped] = useState<boolean>();
+  const [analysedCompetitor, setAnalyzedCompetitor] = useState<boolean>();
   const [notionPageCreated, setNotionPageCreated] = useState<
     boolean | undefined
   >();
@@ -21,9 +21,11 @@ export default function Home() {
   const [showUserPageInput, setShowUserPageInput] = useState(false);
   const [userPageInput, setUserPageInput] = useState("");
   const [logs, setLogs] = useState<any[]>([]);
-  const [pageURL, setPageURL] = useState("");
+  const [pageInfo, setPageInfo] = useState({title: "", url: ""});
 
   const context = useContext(GlobalContext);
+
+  const logsRef = useRef(null)
 
   useEffect(() => {
     function confirmAuth() {
@@ -66,16 +68,16 @@ export default function Home() {
         if (!resp.error) {
           setCompetitorData(resp);
           setAnalyzingCompetitor(false);
-          setDataScraped(true);
+          setAnalyzedCompetitor(true);
         } else {
           setAnalyzingCompetitor(false);
-          setDataScraped(false);
+          setAnalyzedCompetitor(false);
         }
       })
       .catch((err) => {
         console.log(err);
         setAnalyzingCompetitor(false);
-        setDataScraped(false);
+        setAnalyzedCompetitor(false);
       });
   }
 
@@ -96,23 +98,26 @@ export default function Home() {
       eventSource.onmessage = function (event) {
         const logData = event.data.replace("data: ", "");
 
-        const lines = logData.slice(2, -1).replace("\\n\\n", " ").split("\\n");
+        const lines = logData.slice(2, -1).replace("\\n\\n", " ").replace(/\\n/g, '\n').split("\n");
 
         setLogs((prevLogs) => [...prevLogs, ...lines]);
 
-        const regex = /'url':\s*'([^']+)'/;
-        const match = logData.match(regex);
-        const url = match ? match[1] : null;
-        console.log(url)
-        setPageURL(url)
+        const parentIdRegex = /"parent_id":\s*"([^"]+)"/;
+        const parentIdMatch = logData.match(parentIdRegex);
+        const parentId = parentIdMatch ? parentIdMatch[1] : null;
+        
+        const titleRegex = /"title":\s*"([^"]+)"/;
+        const titleMatch = logData.match(titleRegex);
+        const title = titleMatch ? titleMatch[1] : null;
 
+        if (parentId && title) {
+          const pageUrl = `https://notion.so/${parentId.replace(/-/g, "")}`;
+          setPageInfo({title, url: pageUrl})
+        }
+    
         if (logData.includes("AgentFinish")) {
           eventSource.close();
           setNotionPageCreated(true);
-          setAddingPage(false);
-        } else if (logData.includes("Action Input is not a vaild key")) {
-          eventSource.close();
-          setNotionPageCreated(false);
           setAddingPage(false);
         }
       };
@@ -133,15 +138,17 @@ export default function Home() {
       <SignOut />
       <h1 className="text-5xl font-bold text-center">Competitor Research</h1>
       <section className="flex flex-col items-center justify-center gap-6">
-        <div className="flex flex-row gap-2 items-center justify-center md:flex-col md:items-center">
+        <div className="w-full flex flex-row gap-2 items-center justify-between md:flex-col md:items-center">
           <input
             onChange={(e) => {
               setURL(e.target.value);
             }}
-            className="px-3 py-2 rounded-md bg-transparent text-white border-[1px] border-gray-500 w-96"
+            className="px-3 py-2 rounded-md bg-transparent text-white border-[1px] border-gray-500 min-w-96 flex-grow"
             type="url"
             placeholder="Enter the competitor's website (https://vercel.com)"
           />
+          <div className="flex flex-row gap-2">
+
           <button
             disabled={analyzingCompetitor || url === ""}
             onClick={getScrapedData}
@@ -159,7 +166,7 @@ export default function Home() {
             className={`border-[1px] border-gray-500 px-4 py-2 rounded-md bg-transparent hover:bg-gray-900 duration-300 ${
               competitorData === "" || addingPage ? "opacity-50" : "opacity-100"
             }`}
-          >
+            >
             {showUserPageInput && !addingPage
               ? "Cancel"
               : addingPage
@@ -167,20 +174,22 @@ export default function Home() {
               : "Add to Notion"}
           </button>
         </div>
+        </div>
 
         {showUserPageInput && (
           <div className="flex flex-col gap-2 justify-center">
             <span className="max-w-prose">
               Write the name of the Parent Page under which the page will be
-              created and competitor details will be added. Note that this
-              parent page should already exist in your notion app.
+              created and competitor details will be added. 
+              <span className="text-red-700"> Note that this
+              parent page should already exist in your notion app.</span>
             </span>
-            <div className="flex flex-row gap-2 items-center md:flex-col">
+            <div className="flex flex-row gap-2 items-center justify-between md:flex-col">
               <input
                 onChange={(e) => {
                   setUserPageInput(e.target.value);
                 }}
-                className="px-4 py-2 rounded-md bg-black text-white border-[1px] border-gray-500 w-96"
+                className="px-4 py-2 rounded-md bg-black text-white border-[1px] border-gray-500 w-96 flex-grow"
                 type="text"
                 placeholder="Write the parent page name"
               />
@@ -214,6 +223,7 @@ export default function Home() {
             {showLogs ? "Hide Logs" : "Show Logs"}
           </div>
           <div
+            ref={logsRef}
             className={`${
               showLogs ? "block" : "hidden"
             } max-w-prose text-wrap max-h-48 overflow-y-auto flex flex-col`}
@@ -223,7 +233,7 @@ export default function Home() {
             ) : analyzingCompetitor === false && competitorData !== "" ? (
               <p>Analysis complete.</p>
             ) : null}
-            {logs.length !== 0 && logs.map((log) => <p>{log}</p>)}
+            {logs.length !== 0 && logs.map((log) => <p>{log.replace(/\\/g, " ")}</p>)}
           </div>
         </div>
 
@@ -234,16 +244,14 @@ export default function Home() {
       {notionPageCreated === true && (
         <Toast type="success">
           <span>
-            Your notion page was created
-            {/* , click{" "}
-            <a
+            Your notion page was created <a
               className="underline text-blue-900"
-              href={pageURL}
+              href={pageInfo.url}
               target="_blank"
             >
               here
             </a>{" "}
-            to see it. */}
+            with the title "{pageInfo.title}"
           </span>
         </Toast>
       )}
@@ -259,7 +267,7 @@ export default function Home() {
           <span>Please authenticate through notion first</span>
         </Toast>
       )}
-      {dataScraped === false && (
+      {analysedCompetitor === false && (
         <Toast type="error">
           <span>
             There was some error in reading the page, please try again.

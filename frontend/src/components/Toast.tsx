@@ -1,5 +1,5 @@
 import { AiOutlineClose } from "react-icons/ai";
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function Toast({
   children,
