@@ -4,6 +4,8 @@ This is a project that let's you get information on a comeptitor's website and a
 
 - It's built using Next.js, Python and composio SDK (it makes it soooo easy to add the info to notion).
 
+![image info](./flow.png)
+
 ## To setup the project, follow these instructions
 ### To setup the backend:
 - Go to the backend directory 
@@ -48,4 +50,3 @@ npm run dev
 ```
 
 Now add some awesome features and send us a PR.
-
