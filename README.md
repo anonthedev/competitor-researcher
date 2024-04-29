@@ -16,7 +16,7 @@ cd ./backend
 ```
 OPENAI_API_KEY=sk-
 ```
-- Create a virtual env (we used python3.12) using 
+- Create a virtual env (we used python3.12) - 
 ```
 python -m venv env
 source env/bin/activate
