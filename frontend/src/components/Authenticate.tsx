@@ -5,12 +5,13 @@ import { v4 as uuidv4 } from "uuid";
 import Toast from "./Toast";
 import Link from "next/link";
 import { GlobalContext } from "@/app/contextProvider";
-import { BASE_URL } from "./utils";
 
 export default function Authenticate() {
   const [authURL, setAuthURL] = useState("");
   const [loading, setLoading] = useState(false)
   const context = useContext(GlobalContext);
+
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
 
   useEffect(() => {
     if (!localStorage.getItem("entity_id")) {

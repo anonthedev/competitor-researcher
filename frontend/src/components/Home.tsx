@@ -5,7 +5,7 @@ import Toast from "./Toast";
 import SignIn from "./SignIn";
 import SignOut from "./SignOut";
 import Markdown from "react-markdown";
-import { BASE_URL } from "./utils";
+// import { BASE_URL } from "./utils";
 
 export default function Home() {
   const [url, setURL] = useState("");
@@ -26,6 +26,8 @@ export default function Home() {
   const context = useContext(GlobalContext);
 
   const logsRef = useRef(null)
+
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
 
   useEffect(() => {
     function confirmAuth() {
