@@ -96,7 +96,7 @@ export default function Authenticate() {
         </div>
       )}
       {context.authenticated && (
-        <Toast toast="Already authenticated" type="success" />
+        <Toast type="success">Already Authenticated</Toast>
       )}
     </main>
   );

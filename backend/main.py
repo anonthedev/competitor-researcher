@@ -199,8 +199,11 @@ def create_notion_page():
     parent_page = request.args.get('parent_page')
     entity_id = request.args.get('entity_id')
     competitor_data = request.args.get('competitor_data')
+    # competitor_data = request.data
     
     decoded_competitor_data = base64.b64decode(competitor_data)
+    
+    print(decoded_competitor_data)
     
     def step_callback(step_output):
         nonlocal logs_buffer
@@ -221,7 +224,7 @@ def create_notion_page():
     )
     print(decoded_competitor_data)
     task = Task(
-        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them.\nPointers to be included in the page: {decoded_competitor_data}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
+        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them. The pointers that I'll send you will be in Markdown format. \nPointers to be included in the page: {decoded_competitor_data}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
         expected_output="List down the contents of the page and title of the page created.",
         agent=agent,
         async_execution=True,

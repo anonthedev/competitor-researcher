@@ -21,6 +21,7 @@ export default function Home() {
   const [showUserPageInput, setShowUserPageInput] = useState(false);
   const [userPageInput, setUserPageInput] = useState("");
   const [logs, setLogs] = useState<any[]>([]);
+  const [pageURL, setPageURL] = useState("");
 
   const context = useContext(GlobalContext);
 
@@ -88,7 +89,9 @@ export default function Home() {
       const eventSource = new EventSource(
         `${BASE_URL}/create_notion_page?parent_page=${userPageInput}&entity_id=${localStorage.getItem(
           "entity_id"
-        )}&competitor_data=${Buffer.from(competitorData).toString('base64')}`
+        )}&competitor_data=${encodeURIComponent(
+          Buffer.from(competitorData).toString("base64")
+        )}`
       );
       eventSource.onmessage = function (event) {
         const logData = event.data.replace("data: ", "");
@@ -97,15 +100,17 @@ export default function Home() {
 
         setLogs((prevLogs) => [...prevLogs, ...lines]);
 
+        const regex = /'url':\s*'([^']+)'/;
+        const match = logData.match(regex);
+        const url = match ? match[1] : null;
+        console.log(url)
+        setPageURL(url)
+
         if (logData.includes("AgentFinish")) {
           eventSource.close();
           setNotionPageCreated(true);
           setAddingPage(false);
-        } else if (
-          logData.includes(
-            "Action Input is not a vaild key"
-          )
-        ) {
+        } else if (logData.includes("Action Input is not a vaild key")) {
           eventSource.close();
           setNotionPageCreated(false);
           setAddingPage(false);
@@ -227,22 +232,39 @@ export default function Home() {
         )}
       </section>
       {notionPageCreated === true && (
-        <Toast toast="Notion page created." type="success" />
+        <Toast type="success">
+          <span>
+            Your notion page was created
+            {/* , click{" "}
+            <a
+              className="underline text-blue-900"
+              href={pageURL}
+              target="_blank"
+            >
+              here
+            </a>{" "}
+            to see it. */}
+          </span>
+        </Toast>
       )}
       {notionPageCreated === false && (
-        <Toast
-          toast="Notion page creation failed, Please try again in sometime."
-          type="error"
-        />
+        <Toast type="error">
+          <span>
+            Notion page creation failed, Please try again in sometime.
+          </span>
+        </Toast>
       )}
       {showNoAuthToast && (
-        <Toast toast="Please authenticate through notion first" type="error" />
+        <Toast type="error">
+          <span>Please authenticate through notion first</span>
+        </Toast>
       )}
       {dataScraped === false && (
-        <Toast
-          toast="There was some error in reading the page, please try again."
-          type="error"
-        />
+        <Toast type="error">
+          <span>
+            There was some error in reading the page, please try again.
+          </span>
+        </Toast>
       )}
     </main>
   );

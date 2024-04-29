@@ -1,11 +1,11 @@
 import { AiOutlineClose } from "react-icons/ai";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function Toast({
-  toast,
+  children,
   type,
 }: {
-  toast: string;
+  children: React.ReactNode;
   type: "success" | "error" | "";
 }) {
   const [showToast, setShowToast] = useState<boolean>(true);
@@ -27,7 +27,7 @@ export default function Toast({
               : "#339af0",
         }}
       >
-        <span className="text-sm font-semibold">&#9432; {toast}</span>
+        <span className="text-sm font-semibold">&#9432; {children}</span>
         <button
           onClick={() => {
             if (showToast) {
