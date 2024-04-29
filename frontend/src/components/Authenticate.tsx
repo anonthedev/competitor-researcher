@@ -51,7 +51,6 @@ export default function Authenticate() {
   function notionAuth() {
     setLoading(true)
     let entity_id = localStorage.getItem("entity_id");
-    console.log(context);
     fetch(`${BASE_URL}/authenticate?entity_id=${entity_id?.toString()}`)
       .then((data) => data.json())
       .then((resp) => {
