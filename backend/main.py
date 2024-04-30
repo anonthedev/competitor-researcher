@@ -205,7 +205,7 @@ def create_notion_page():
         async_execution=True,
     )
     
-    # task.execute()
+    task.execute()
 
     def generate_log_stream():
         while True:
