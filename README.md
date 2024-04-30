@@ -6,6 +6,10 @@ This is a project that let's you get information on a comeptitor's website and a
 
 ![image info](./flow.png)
 
+##Demo
+![image](https://github.com/anonthedev/competitor-researcher/assets/84020006/ab61cb5d-bbea-4695-ac82-ded6a49a90e4)
+
+
 ## To setup the project, follow these instructions
 ### To setup the backend:
 - Go to the backend directory 
