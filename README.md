@@ -7,7 +7,8 @@ This is a project that let's you get information on a comeptitor's website and a
 ![image info](./flow.png)
 
 ##Demo
-![video](https://github.com/anonthedev/competitor-researcher/assets/84020006/ab61cb5d-bbea-4695-ac82-ded6a49a90e4)
+The video is at 2x
+https://github.com/anonthedev/competitor-researcher/assets/84020006/4ac3afaa-8e9d-4d89-8fab-5e37fe4dd9b8
 
 
 ## To setup the project, follow these instructions
