@@ -141,7 +141,7 @@ def get_info(cleaned_html: str) -> str:
                 },
                 {
                     "role": "user",
-                    "content": f"This is the data of the website of one of my competitors. I want a point-wise analysis. Don't repeat yourself and be to the point on whatever you say don't add uneccessary information. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. \n Website Data: {cleaned_html}",
+                    "content": f"This is the data of the website of one of my competitors. I want a point-wise analysis. Don't repeat yourself and be to the point on whatever you say don't add uneccessary information. Include some stats with actual numbers, apply your own knowledge if you know about the said product but keep the data that I provide as the top priority. Have at least 7-8 points. Keep the whole thing under 2500 characters. \n Website Data: {cleaned_html}",
                 },
             ],
         )
@@ -176,8 +176,9 @@ def scrape_website():
 def create_notion_page():
     parent_page = request.args.get('parent_page')
     entity_id = request.args.get('entity_id')
-    competitor_data = request.args.get('competitor_data')
-    decoded_competitor_data = base64.b64decode(competitor_data)
+    
+    encoded_competitor_data = request.args.get('competitor_data')
+    competitor_data = base64.b64decode(encoded_competitor_data)
     
     def step_callback(step_output):
         nonlocal logs_buffer
@@ -198,13 +199,13 @@ def create_notion_page():
     )
     
     task = Task(
-        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them. \nPointers to be included in the page: {decoded_competitor_data}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
+        description=f"Create a page for the competitor with the specified name. If a page with the same name already exists, append a unique identifier as a prefix or suffix. Create the page under '{parent_page}', if the parent page '{parent_page}' doesn't exist, find the most suitable parent page among existing pages. Place the pointers given to you in the created page without altering them. \nPointers to be included in the page: {competitor_data}. \n Your task ends only after successfully putting in the pointers in the page that you created.",
         expected_output="List down the contents of the page and title of the page created.",
         agent=agent,
         async_execution=True,
     )
     
-    task.execute()
+    # task.execute()
 
     def generate_log_stream():
         while True:

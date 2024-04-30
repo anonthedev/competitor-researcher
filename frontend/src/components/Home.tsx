@@ -5,7 +5,7 @@ import Toast from "./Toast";
 import SignIn from "./SignIn";
 import SignOut from "./SignOut";
 import Markdown from "react-markdown";
-// import { BASE_URL } from "./utils";
+import pako from "pako"
 
 export default function Home() {
   const [url, setURL] = useState("");
@@ -89,6 +89,7 @@ export default function Home() {
     setNotionPageCreated(undefined);
     setShowLogs(true);
     setLogs([]);
+
     if (context.authenticated && userPageInput && competitorData) {
       const eventSource = new EventSource(
         `${BASE_URL}/create_notion_page?parent_page=${userPageInput}&entity_id=${localStorage.getItem(
