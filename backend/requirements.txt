@@ -1,5 +1,5 @@
 composio_crewai
-crewai
+crewai==0.28.8
 flask
 openai
 beautifulsoup4
