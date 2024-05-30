@@ -1,4 +1,4 @@
-composio_crewai>=0.2.22, <=0.2.36
+composio_crewai==0.2.36rc2
 crewai==0.28.8
 flask
 openai
